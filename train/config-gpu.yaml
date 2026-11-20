@@ -1,0 +1,19 @@
+# LoRA on a home RTX 5070 (12 GB, bf16), run through a private remote-run script.
+# Paths are relative to the unpacked bundle (train/bundle.py).
+base_model: Qwen/Qwen3.5-0.8B
+revision: 2fc06364715b967f1860aea9cf38778875588b17   # Apache-2.0, checked 2026-11-08
+data_dir: data/dataset
+output_dir: out/chirone-0.8b
+
+lora: true
+lora_r: 32
+lora_alpha: 64
+
+epochs: 3
+lr: 2.0e-4
+batch_size: 16
+grad_accum: 1
+max_length: 1024
+eval_steps: 200
+seed: 13
+bf16: true

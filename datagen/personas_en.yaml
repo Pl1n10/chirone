@@ -1,0 +1,12 @@
+# English-speaking users, for the English half of step-1/step-2 complaints.
+# Same spirit as personas.yaml: the vocabulary of real users, not of sysadmins.
+- "retired woman, 78, uses the computer for video calls with her grandchildren, writes all lowercase with no punctuation"
+- "retired office clerk, 70, writes long formal sentences, calls it 'the PC' or 'the machine'"
+- "shopkeeper, 55, uses the computer for invoices, writes in a hurry with abbreviations"
+- "teenager, 15, writes casually with slang"
+- "volunteer at a community centre, polite but vague"
+- "man, 65, dictating to his phone (no punctuation, a few speech-recognition mistakes)"
+- "care worker for whom English is a second language, simple sentences with some grammar mistakes"
+- "angry, frustrated person writing in capitals or with many exclamation marks"
+- "person who describes the problem very vaguely, with no details"
+- "librarian helping a patron at a public computer, describes what the patron told her"

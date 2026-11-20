@@ -1,0 +1,384 @@
+# Lab faults: injected into throw-away VMs through the QEMU guest agent
+# (not SSH: several faults kill the network). Each fault declares the fix
+# that is correct *by construction*. Labels come from here, never from the
+# teacher model.
+#
+# run_as: root | user   (user = the lab desktop user, inside its session)
+# inject / check_broken: bash, run in the VM. check_broken must exit 0 when
+#   the fault is really in place, otherwise the sample is discarded.
+# expected.params: literal values, or {probe, regex} capturing group 1 from
+#   the probe output collected in the VM.
+# fidelity: how close the lab fault is to the real-world one
+#   (high = same mechanism, low = synthetic, needs real-hardware samples).
+# symptom_it: what the person perceives. Fed to the teacher to write
+#   complaints. Never technical.
+
+- id: net_networking_off
+  category: network
+  run_as: root
+  fidelity: high
+  symptom_it: "Internet non va su nessun sito, l'icona della rete in basso ha una croce o è grigia."
+  inject: nmcli networking off
+  check_broken: nmcli -t -f NETWORKING general | grep -qx disabled
+  expected: {fix_id: net.enable_networking}
+
+- id: net_device_disconnected
+  category: network
+  run_as: root
+  fidelity: medium
+  symptom_it: "Internet non funziona, ma il modem è acceso e sugli altri dispositivi va."
+  inject: |
+    IF=$(nmcli -t -f DEVICE,TYPE device | awk -F: '$2=="ethernet"{print $1; exit}')
+    nmcli device disconnect "$IF"
+  check_broken: nmcli -t -f TYPE,STATE device | grep -q '^ethernet:disconnected'
+  expected:
+    fix_id: net.connect_device
+    params:
+      iface: {probe: nm_devices, regex: '^([^:]+):ethernet:disconnected'}
+
+- id: net_wifi_radio_off
+  category: network
+  run_as: root
+  fidelity: low   # VMs have no Wi-Fi card: collect real-laptop samples too
+  symptom_it: "Il portatile non vede più nessuna rete Wi-Fi, nemmeno quella di casa."
+  inject: nmcli radio wifi off
+  check_broken: nmcli -t radio wifi | grep -qx disabled
+  expected: {fix_id: net.wifi_radio_on}
+
+- id: net_nm_stopped
+  category: network
+  run_as: root
+  fidelity: medium
+  symptom_it: "Internet non va e l'icona della rete è sparita del tutto."
+  inject: systemctl stop NetworkManager
+  check_broken: "! systemctl is-active --quiet NetworkManager"
+  expected: {fix_id: svc.restart, params: {service: NetworkManager}}
+
+- id: dns_manual_wrong
+  category: network
+  run_as: root
+  fidelity: high
+  symptom_it: "Internet sembra collegato ma nessun sito si apre, il browser dice che non trova il server."
+  inject: |
+    CON=$(nmcli -t -f NAME,TYPE connection show --active | awk -F: '$2 ~ /ethernet|wireless/ {print $1; exit}')
+    nmcli connection modify "$CON" ipv4.ignore-auto-dns yes ipv4.dns 192.0.2.53
+    nmcli connection up "$CON"
+  check_broken: "! getent hosts deb.debian.org"
+  expected:
+    fix_id: dns.reset_to_auto
+    params:
+      connection: {probe: nm_active, regex: '^([^:]+):[^:]*:(802-3-ethernet|ethernet|802-11-wireless|wifi)$'}
+
+- id: time_wrong_clock
+  category: network
+  run_as: root
+  fidelity: high   # same symptom as a flat CMOS battery
+  symptom_it: "Tutti i siti dicono che la connessione non è sicura o che il certificato non è valido, anche Google."
+  # set-ntp returns before timesyncd has stopped: an immediate set-time can be
+  # refused with "Previous request is not finished", so retry for a while.
+  inject: |
+    timedatectl set-ntp false
+    for i in $(seq 15); do timedatectl set-time '2019-03-01 10:00:00' 2>/dev/null && break; sleep 1; done
+  check_broken: '[ "$(date +%Y)" -lt 2020 ]'
+  expected: {fix_id: time.enable_ntp}
+
+- id: disk_full_apt_cache
+  category: storage
+  run_as: root
+  fidelity: medium
+  symptom_it: "Il computer dice che il disco è pieno e non riesco a salvare niente."
+  inject: |
+    AV=$(df --output=avail -BM / | tail -1 | tr -dc 0-9)
+    fallocate -l $((AV-50))M /var/cache/apt/archives/chirone-junk_1.0_amd64.deb
+  check_broken: '[ "$(df --output=avail -BM / | tail -1 | tr -dc 0-9)" -lt 200 ]'
+  expected: {fix_id: disk.apt_clean}
+
+- id: disk_full_trash
+  category: storage
+  run_as: user
+  fidelity: high
+  symptom_it: "Mi dice che lo spazio è finito, ma ho già cancellato un sacco di foto vecchie."
+  inject: |
+    T=~/.local/share/Trash; mkdir -p "$T/files" "$T/info"
+    AV=$(df --output=avail -BM ~ | tail -1 | tr -dc 0-9)
+    fallocate -l $((AV-50))M "$T/files/video-vecchi.mp4"
+    printf '[Trash Info]\nPath=%s/Video/video-vecchi.mp4\nDeletionDate=2026-01-10T10:00:00\n' "$HOME" > "$T/info/video-vecchi.mp4.trashinfo"
+  check_broken: '[ "$(df --output=avail -BM ~ | tail -1 | tr -dc 0-9)" -lt 200 ]'
+  expected: {fix_id: disk.empty_trash}
+
+- id: disk_full_thumbnails
+  category: storage
+  run_as: user
+  fidelity: medium
+  symptom_it: "Il disco è quasi pieno anche se non ho installato niente di nuovo."
+  inject: |
+    mkdir -p ~/.cache/thumbnails/large
+    AV=$(df --output=avail -BM ~ | tail -1 | tr -dc 0-9)
+    fallocate -l $((AV-50))M ~/.cache/thumbnails/large/0a1b2c3d4e5f.png
+  check_broken: '[ "$(df --output=avail -BM ~ | tail -1 | tr -dc 0-9)" -lt 200 ]'
+  expected: {fix_id: disk.clear_thumbnails}
+
+- id: apt_lock_held
+  category: updates
+  run_as: root
+  fidelity: medium   # real holder is usually unattended-upgrades
+  symptom_it: "Quando provo ad aggiornare o installare un programma mi dice che è occupato o bloccato."
+  inject: |
+    nohup python3 -c "import fcntl,time;f=open('/var/lib/dpkg/lock-frontend','w');fcntl.lockf(f,fcntl.LOCK_EX);time.sleep(90)" >/dev/null 2>&1 &
+    sleep 1
+  check_broken: fuser /var/lib/dpkg/lock-frontend
+  expected: {fix_id: apt.wait_for_lock}
+
+- id: dpkg_interrupted
+  category: updates
+  run_as: root
+  fidelity: high
+  symptom_it: "Gli aggiornamenti danno errore da quando il computer si è spento da solo mentre aggiornava."
+  # Dependencies first: a real interrupted upgrade has them, and without them
+  # `dpkg --configure -a` fails for a reason the fix cannot cure (Debian 13
+  # images lack libncurses6).
+  inject: |
+    apt-get install -y -q libncurses6 libtinfo6 >/dev/null
+    cd /tmp && apt-get download -q sl && dpkg --unpack sl_*.deb
+  check_broken: dpkg --audit | grep -q .
+  expected: {fix_id: apt.dpkg_configure}
+
+- id: apt_broken_deps
+  category: updates
+  run_as: root
+  fidelity: high   # same as double-clicking a .deb with missing deps
+  symptom_it: "Ho installato un programma scaricato da internet e da allora non si aggiorna più niente."
+  inject: |
+    D=$(mktemp -d); mkdir -p "$D/pkg/DEBIAN"
+    printf 'Package: chirone-demo\nVersion: 1.0\nArchitecture: all\nMaintainer: lab <lab@localhost>\nDepends: hello\nDescription: lab fault package\n' > "$D/pkg/DEBIAN/control"
+    dpkg-deb --build "$D/pkg" "$D/chirone-demo.deb" >/dev/null
+    dpkg -i "$D/chirone-demo.deb" || true
+  check_broken: "! apt-get check >/dev/null 2>&1"
+  expected: {fix_id: apt.fix_broken}
+
+- id: apt_bad_source
+  category: updates
+  run_as: root
+  fidelity: high
+  symptom_it: "Il programma degli aggiornamenti mostra un errore rosso che non capisco."
+  inject: |
+    echo 'deb http://deb.chirone.invalid/debian stable main' > /etc/apt/sources.list.d/vecchio-programma.list
+  check_broken: apt-get update 2>&1 | grep -q chirone.invalid
+  expected:
+    fix_id: apt.disable_source
+    params:
+      file: {probe: apt_sources, regex: '/etc/apt/sources\.list\.d/([^:]+):deb http://deb\.chirone\.invalid'}
+
+# F-020: run 8 never saw a broken source next to a good third-party one and,
+# on Ubuntu (mozilla.list preinstalled), disabled Mozilla's. Same broken
+# source as apt_bad_source, plus a real working Mozilla/Google/Microsoft one.
+- id: apt_bad_source_thirdparty
+  category: updates
+  run_as: root
+  fidelity: high
+  symptom_it: "Il programma degli aggiornamenti mostra un errore rosso che non capisco."
+  inject: |
+    set -e
+    install -d -m 0755 /etc/apt/keyrings
+    case $(( RANDOM % 3 )) in
+      0) K=https://packages.mozilla.org/apt/repo-signing-key.gpg; KF=packages.mozilla.org.asc
+         F=mozilla.list; O=""; U="https://packages.mozilla.org/apt mozilla main" ;;
+      1) K=https://dl.google.com/linux/linux_signing_key.pub; KF=google-chrome.asc
+         F=google-chrome.list; O="arch=amd64 "; U="https://dl.google.com/linux/chrome/deb/ stable main" ;;
+      *) K=https://packages.microsoft.com/keys/microsoft.asc; KF=microsoft.asc
+         F=vscode.list; O="arch=amd64 "; U="https://packages.microsoft.com/repos/code stable main" ;;
+    esac
+    if [ ! -e /etc/apt/sources.list.d/$F ]; then
+      wget -qO /etc/apt/keyrings/$KF "$K"
+      echo "deb [${O}signed-by=/etc/apt/keyrings/$KF] $U" > /etc/apt/sources.list.d/$F
+    fi
+    echo 'deb http://deb.chirone.invalid/debian stable main' > /etc/apt/sources.list.d/vecchio-programma.list
+  check_broken: 'ls /etc/apt/sources.list.d/ | grep -qE "^(mozilla|google-chrome|vscode)\.list$" && apt-get update > /tmp/chirone-aptu 2>&1; grep -q chirone.invalid /tmp/chirone-aptu && ! grep -E "^(E:|W:|Err)" /tmp/chirone-aptu | grep -vE "chirone\.invalid|Some index files" | grep -q .'
+  expected:
+    fix_id: apt.disable_source
+    params:
+      file: {probe: apt_sources, regex: '/etc/apt/sources\.list\.d/([^:]+):deb http://deb\.chirone\.invalid'}
+
+- id: cups_stopped
+  category: printing
+  run_as: root
+  fidelity: medium
+  symptom_it: "Quando provo a stampare non succede niente, la stampante non compare nemmeno."
+  inject: systemctl stop cups.socket cups.path cups.service
+  check_broken: "! systemctl is-active --quiet cups"
+  expected: {fix_id: svc.restart, params: {service: cups}}
+
+- id: printer_disabled
+  category: printing
+  run_as: root
+  fidelity: high
+  symptom_it: "La stampante è accesa ma i fogli non escono, dice che è in pausa o ferma."
+  inject: cupsdisable -r "error" ChironeTest
+  check_broken: lpstat -p ChironeTest | grep -q disabled
+  expected:
+    fix_id: print.enable_printer
+    params:
+      printer: {probe: lpstat_printers, regex: '^printer (\S+) disabled'}
+
+- id: print_queue_stuck
+  category: printing
+  run_as: user
+  fidelity: medium
+  symptom_it: "Ho mandato a stampare tante volte lo stesso documento ma non esce niente."
+  inject: |
+    for i in 1 2 3; do echo "bolletta $i" | lp -d ChironeTest -t "bolletta-$i" >/dev/null; done
+    sleep 2
+  check_broken: lpstat -o ChironeTest | grep -q .
+  expected:
+    fix_id: print.clear_queue
+    params:
+      printer: {probe: lpstat_jobs, regex: '^(\S+)-[0-9]+\s'}
+
+- id: audio_muted
+  category: audio
+  run_as: user
+  fidelity: high
+  symptom_it: "Non si sente niente, né i video né la musica."
+  inject: pactl set-sink-mute @DEFAULT_SINK@ 1
+  check_broken: pactl get-sink-mute @DEFAULT_SINK@ | grep -q yes
+  expected: {fix_id: audio.unmute}
+
+- id: audio_volume_zero
+  category: audio
+  run_as: user
+  fidelity: high
+  symptom_it: "I video partono ma l'audio non si sente, eppure le casse sono accese."
+  inject: pactl set-sink-volume @DEFAULT_SINK@ 0%
+  check_broken: pactl get-sink-volume @DEFAULT_SINK@ | grep -q ' 0%'
+  expected: {fix_id: audio.set_volume, params: {percent: 60}}
+
+- id: audio_wrong_default_sink
+  category: audio
+  run_as: user
+  fidelity: medium   # null sinks named like real ALSA outputs
+  symptom_it: "Da quando ho attaccato il monitor nuovo non sento più l'audio dalle casse."
+  inject: |
+    pactl list short sinks | grep -q analog-stereo || pactl load-module module-null-sink sink_name=alsa_output.pci-0000_00_1b.0.analog-stereo sink_properties=device.description=Altoparlanti >/dev/null
+    pactl list short sinks | grep -q hdmi-stereo || pactl load-module module-null-sink sink_name=alsa_output.pci-0000_01_00.1.hdmi-stereo sink_properties=device.description=HDMI >/dev/null
+    pactl set-default-sink alsa_output.pci-0000_01_00.1.hdmi-stereo
+  check_broken: pactl get-default-sink | grep -q hdmi
+  expected:
+    fix_id: audio.set_default_sink
+    # The analog sink is the real ALSA one when the VM's sound card shows up,
+    # the null sink above otherwise: its name differs per machine (PCI path),
+    # so read it from the probe like the model has to.
+    params:
+      sink: {probe: audio_sinks, regex: '^\d+ (\S+\.analog-stereo) '}
+
+- id: audio_pipewire_down
+  category: audio
+  run_as: user
+  fidelity: medium
+  symptom_it: "L'icona del volume è sparita e non si sente più niente."
+  inject: systemctl --user stop pipewire.socket pipewire-pulse.socket pipewire pipewire-pulse wireplumber
+  check_broken: "! pactl info >/dev/null 2>&1"
+  expected: {fix_id: audio.restart_stack}
+
+- id: firefox_stale_lock
+  category: apps
+  run_as: user
+  fidelity: medium   # foreign-host lock: Firefox won't auto-clear it
+  symptom_it: "Firefox non si apre più, dice che è già in esecuzione ma non si vede da nessuna parte."
+  inject: |
+    P=$(ls -d ~/.mozilla/firefox/*.default* ~/.config/mozilla/firefox/*.default* 2>/dev/null | head -1)
+    ln -sfn 192.0.2.7:+31337 "$P/lock"; touch "$P/.parentlock"
+  # not `ls a b`: it fails when either home is missing, even with the lock in the other
+  check_broken: find ~/.mozilla/firefox ~/.config/mozilla/firefox -maxdepth 2 -name lock 2>/dev/null | grep -q .
+  expected:
+    fix_id: app.firefox_clear_stale_lock
+    params:
+      profile: {probe: firefox_locks, regex: 'mozilla/firefox/([^/]+)/lock$'}
+
+- id: proc_runaway
+  category: system
+  run_as: user
+  fidelity: medium
+  symptom_it: "Il computer è diventato lentissimo all'improvviso e la ventola fa un rumore fortissimo."
+  inject: |
+    cp /usr/bin/yes /tmp/evince
+    nohup /tmp/evince >/dev/null 2>&1 &
+    sleep 3
+  check_broken: pgrep -x evince
+  expected:
+    fix_id: proc.terminate_user_process
+    params:
+      pid: {probe: top_procs, regex: '^\s*([0-9]+)\s+\S+\s+evince\s'}
+
+- id: fs_root_readonly
+  category: system
+  run_as: root
+  fidelity: medium   # real cause is usually a failing disk: must escalate
+  symptom_it: "Non riesco a salvare niente, dice che il file è di sola lettura, anche sul desktop."
+  # `mount -o remount,ro /` is refused while files are open for writing
+  # ("mount point is busy"). The emergency remount forces it, like the kernel
+  # does on disk errors (errors=remount-ro); it is asynchronous, so wait.
+  # Not ext4's trigger_fs_error: on Debian 13 it makes every read fail with
+  # EIO, so no probe could run.
+  # After the remount, writeback of dirty pages (mmapped journal files)
+  # fails with "ext4_do_writepages ... err -30" in the kernel log, 15-45 s
+  # later. Samples that all had those lines taught the model "EXT4 errors ->
+  # escalate" instead of "/ mounted ro -> escalate" (fourth fine-tune,
+  # 2026-11-09). sync + periodic writeback off freezes the first seconds
+  # after the remount: / is ro and the log is still clean (tested 60 s).
+  # Lab choice, F-017. Older samples keep the errors: the data has both.
+  inject: |
+    sync
+    sysctl -q vm.dirty_writeback_centisecs=0
+    echo u > /proc/sysrq-trigger
+    for i in $(seq 20); do findmnt -n -o OPTIONS / | grep -q '^ro' && break; sleep 1; done
+  check_broken: findmnt -n -o OPTIONS / | grep -q '^ro'
+  expected: {fix_id: escalate.human, params: {reason: disk_failure_suspected}}
+
+- id: control_nothing_broken
+  category: other
+  run_as: root
+  fidelity: high
+  symptom_it: "Domande d'uso o lamentele vaghe in cui nel computer non c'è nessun guasto (es. come si ingrandiscono le scritte, come si allega una foto a una mail)."
+  inject: "true"
+  check_broken: "true"
+  expected: {fix_id: noop.no_issue_found}
+
+# Healthy machine with a multi-GB APT cache and a disk far from full, as on a PC
+# with years of updates. The third fine-tune answered disk.apt_clean whenever the
+# cache was in GB, because in the Debian data it only was when the disk was full.
+- id: control_large_apt_cache
+  category: other
+  run_as: root
+  fidelity: high
+  symptom_it: "Nessun guasto: la cache dei pacchetti è grande ma il disco ha ancora molto spazio."
+  inject: |
+    AV=$(df --output=avail -BM / | tail -1 | tr -dc 0-9)
+    R=$(( 1500 + RANDOM % 2500 )); SZ=$(( R < AV / 3 ? R : AV / 3 ))
+    fallocate -l ${SZ}M /var/cache/apt/archives/chirone-oldupdates_1.0_amd64.deb
+  check_broken: '[ -f /var/cache/apt/archives/chirone-oldupdates_1.0_amd64.deb ] && [ "$(df --output=avail -BM / | tail -1 | tr -dc 0-9)" -gt 3000 ]'
+  expected: {fix_id: noop.no_issue_found}
+
+# Healthy PC with a legitimate third-party APT source that works. Before this,
+# a non-distro source appeared in training only as the injected broken one, and
+# run 6 disabled Mozilla's source on healthy Ubuntu PCs (F-019). Collected on the
+# Debian VMs: Ubuntu (the holdout OS) already has mozilla.list from setup.yml.
+- id: control_thirdparty_source
+  category: other
+  run_as: root
+  fidelity: high
+  symptom_it: "Nessun guasto: c'è una fonte di programmi di terzi (Mozilla, Google o Microsoft) che funziona."
+  inject: |
+    set -e
+    install -d -m 0755 /etc/apt/keyrings
+    case $(( RANDOM % 3 )) in
+      0) K=https://packages.mozilla.org/apt/repo-signing-key.gpg; KF=packages.mozilla.org.asc
+         F=mozilla.list; O=""; U="https://packages.mozilla.org/apt mozilla main" ;;
+      1) K=https://dl.google.com/linux/linux_signing_key.pub; KF=google-chrome.asc
+         F=google-chrome.list; O="arch=amd64 "; U="https://dl.google.com/linux/chrome/deb/ stable main" ;;
+      *) K=https://packages.microsoft.com/keys/microsoft.asc; KF=microsoft.asc
+         F=vscode.list; O="arch=amd64 "; U="https://packages.microsoft.com/repos/code stable main" ;;
+    esac
+    wget -qO /etc/apt/keyrings/$KF "$K"
+    echo "deb [${O}signed-by=/etc/apt/keyrings/$KF] $U" > /etc/apt/sources.list.d/$F
+  check_broken: 'ls /etc/apt/sources.list.d/ | grep -qE "^(mozilla|google-chrome|vscode)\.list$" && ! apt-get update 2>&1 | grep -qE "^(E:|W:|Err:)"'
+  expected: {fix_id: noop.no_issue_found}

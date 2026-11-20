@@ -1,0 +1,267 @@
+# Prepares a lab VM before taking the disk-only "clean" snapshot.
+#   ansible-playbook -i lab/ansible/inventory.ini lab/ansible/setup.yml
+- hosts: lab
+  become: true
+  vars:
+    repo_src: "{{ playbook_dir }}/../.."
+    # fixed lab address, kept next to DHCP (see the NetworkManager task)
+    lab_address: "{{ ansible_host }}/24"
+  tasks:
+    - name: Base packages used by probes, faults and the lab
+      ansible.builtin.apt:
+        name: [qemu-guest-agent, network-manager, cups, cups-client, pipewire, pipewire-pulse,
+               wireplumber, pulseaudio-utils, psmisc, usbutils, libglib2.0-bin, python3-venv,
+               rsync, systemd-timesyncd, gvfs]
+        state: present
+        update_cache: true
+
+    # Debian's genericcloud image boots linux-image-cloud-amd64, which has no
+    # sound drivers: with it the VM's emulated HDA card is invisible and every
+    # audio fault runs on PipeWire's dummy output. Swap in the standard kernel.
+    - name: Standard Debian kernel (cloud kernel has no sound drivers)
+      ansible.builtin.apt: {name: linux-image-amd64, state: present}
+      when: ansible_distribution == 'Debian'
+      register: std_kernel
+    - name: Drop the cloud kernel so GRUB boots the standard one
+      ansible.builtin.apt: {name: ["linux-image-cloud-amd64", "linux-image-*-cloud-amd64"], state: absent, purge: true}
+      when: ansible_distribution == 'Debian'
+    # Ubuntu's cloud image ships the -generic kernel without linux-modules-extra,
+    # where snd_hda_intel lives, and the image's own kernel is usually too old
+    # for its modules-extra to still be in the archive. linux-generic pulls the
+    # current kernel together with its modules-extra; the reboot boots it.
+    - name: Sound modules for the Ubuntu kernel
+      ansible.builtin.apt:
+        name: linux-generic
+        state: present
+      when: ansible_distribution == 'Ubuntu'
+      register: ubuntu_snd
+    - name: Reboot into a kernel with sound drivers
+      ansible.builtin.reboot: {reboot_timeout: 600}
+      when: std_kernel is changed or ubuntu_snd is changed
+
+    # A light Xfce desktop: the faults do not need a GUI (the user session
+    # runs through linger), but the probe bundles (top_procs, failed_units)
+    # should look like a desktop's, not a server's. The disk is 20 GB on
+    # purpose (storage faults fill it), so no full task-xfce-desktop.
+    - name: Light Xfce desktop
+      ansible.builtin.apt:
+        name: "{{ ['xfce4', 'lightdm', 'xfce4-terminal'] if ansible_distribution == 'Debian'
+                  else ['xubuntu-core'] }}"
+        state: present
+        install_recommends: false
+
+    # What a person asks to open on such a PC (actions category): the usual
+    # Xfce utilities and LibreOffice for letters and accounts. gtk-launch and
+    # xdg-settings are what app.open / web.search run.
+    - name: Everyday desktop programs
+      ansible.builtin.apt:
+        name: [thunar, mousepad, ristretto, galculator, parole, xfce4-taskmanager,
+               libreoffice-writer, libreoffice-calc, libreoffice-gtk3, libgtk-3-bin, xdg-utils,
+               xfce4-notifyd, libnotify-bin, xdg-user-dirs]
+        state: present
+        install_recommends: false
+
+    # Without recommends the Xfce metapackage brings no X server: lightdm
+    # fails with "Can't launch X server X, not found in path".
+    - name: X server and greeter (Debian)
+      ansible.builtin.apt:
+        name: [xserver-xorg-core, xserver-xorg-input-libinput, lightdm-gtk-greeter, accountsservice, dbus-x11]
+        state: present
+        install_recommends: false
+      when: ansible_distribution == 'Debian'
+
+    # A real graphical session for the lab user, as on a PC switched on in the
+    # morning: app.open needs a display to open anything on, and the session's
+    # PipeWire then starts after the sound card (no more lost ALSA sink, F-007).
+    - name: lightdm drop-in directory
+      ansible.builtin.file: {path: /etc/lightdm/lightdm.conf.d, state: directory, mode: "0755"}
+    - name: Log the lab user in automatically
+      ansible.builtin.copy:
+        dest: /etc/lightdm/lightdm.conf.d/50-chirone-autologin.conf
+        content: "[Seat:*]\nautologin-user={{ lab_user }}\nautologin-session=xfce\n"
+        mode: "0644"
+      notify: Reboot for the network change
+    - name: Boot to the desktop
+      ansible.builtin.command: systemctl set-default graphical.target
+      changed_when: false
+
+    # cloud-init only matters on the first boot of the image; afterwards it
+    # costs ~30 s on every lab reset. A desktop has no cloud-init at all.
+    - name: Disable cloud-init after setup
+      ansible.builtin.copy: {dest: /etc/cloud/cloud-init.disabled, content: "", mode: "0644"}
+
+    # Ubuntu 24.04's "firefox" package is a snap shim: its profile lives in
+    # ~/snap/firefox/... and the firefox_locks probe would see nothing.
+    # Linux Mint (the distro this VM stands in for) ships a real .deb, so use
+    # Mozilla's own APT repository, pinned above the Ubuntu shim.
+    - name: Mozilla APT repository (Ubuntu only)
+      when: ansible_distribution == 'Ubuntu'
+      block:
+        - ansible.builtin.get_url:
+            url: https://packages.mozilla.org/apt/repo-signing-key.gpg
+            dest: /etc/apt/keyrings/packages.mozilla.org.asc
+            mode: "0644"
+        - ansible.builtin.copy:
+            dest: /etc/apt/sources.list.d/mozilla.list
+            content: "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main\n"
+            mode: "0644"
+        - ansible.builtin.copy:
+            dest: /etc/apt/preferences.d/mozilla
+            content: "Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000\n"
+            mode: "0644"
+        - ansible.builtin.apt: {update_cache: true}
+
+    - name: Firefox (Debian ships firefox-esr, Mint ships firefox as a .deb)
+      ansible.builtin.apt:
+        name: "{{ 'firefox-esr' if ansible_distribution == 'Debian' else 'firefox' }}"
+        state: present
+
+    - name: 'Package "hello" must NOT be installed (apt_broken_deps depends on it)'
+      ansible.builtin.apt: {name: hello, state: absent}
+
+    - name: Guest agent running
+      ansible.builtin.systemd: {name: qemu-guest-agent, state: started, enabled: true}
+
+    - name: Lab desktop user
+      ansible.builtin.user: {name: "{{ lab_user }}", shell: /bin/bash, create_home: true}
+
+    - name: Linger, so the user's PipeWire session exists without a GUI login
+      ansible.builtin.command: loginctl enable-linger {{ lab_user }}
+      changed_when: false
+
+    - name: chirone group and membership
+      ansible.builtin.group: {name: chirone}
+    # audio: on a real desktop logind grants /dev/snd to the user on the active
+    # seat. The lab user has no seat (its session runs through linger), so
+    # without the group PipeWire only sees its dummy output.
+    - ansible.builtin.user: {name: "{{ lab_user }}", groups: [chirone, audio], append: true}
+      register: lab_groups
+
+    # A wheel built here and copied over the normal Ansible transport. Not
+    # `synchronize`: it runs its own rsync and ignores ansible_ssh_common_args,
+    # so it breaks behind a jump host. The wheel is also exactly what a real
+    # PC would install: only the package and its catalog, nothing else.
+    - name: Build the chirone wheel on the controller
+      delegate_to: localhost
+      run_once: true
+      become: false
+      ansible.builtin.command:
+        cmd: python3 -m pip wheel --no-deps --quiet -w {{ repo_src }}/data/wheel {{ repo_src }}
+      changed_when: true
+    - name: Find the wheel
+      delegate_to: localhost
+      run_once: true
+      become: false
+      ansible.builtin.find: {paths: "{{ repo_src }}/data/wheel", patterns: "chirone-*.whl"}
+      register: wheel
+    - name: Copy the wheel
+      ansible.builtin.copy:
+        src: "{{ (wheel.files | sort(attribute='mtime') | last).path }}"
+        dest: /usr/local/src/
+        mode: "0644"
+      register: wheel_copy
+    - name: Install chirone into /opt/chirone (root-owned venv)
+      ansible.builtin.command: python3 -m venv /opt/chirone
+      args: {creates: /opt/chirone/bin/python}
+    - ansible.builtin.command: /opt/chirone/bin/pip install --quiet --force-reinstall {{ wheel_copy.dest }}
+      changed_when: true
+
+    - name: /usr/local/libexec (absent on Ubuntu cloud images)
+      ansible.builtin.file: {path: /usr/local/libexec, state: directory, mode: "0755"}
+    - name: Root helper wrapper
+      ansible.builtin.copy:
+        dest: /usr/local/libexec/chirone-root-helper
+        mode: "0755"
+        content: |
+          #!/bin/sh
+          exec /opt/chirone/bin/python -I -m chirone.roothelper "$@"
+    - name: Sudoers entry (only the helper)
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/chirone
+        mode: "0440"
+        validate: visudo -cf %s
+        content: "%chirone ALL=(root) NOPASSWD: /usr/local/libexec/chirone-root-helper\n"
+
+    - name: Test printer pointing at nothing (jobs queue up, never print)
+      ansible.builtin.shell: |
+        lpstat -p ChironeTest >/dev/null 2>&1 || \
+        lpadmin -p ChironeTest -E -v socket://127.0.0.1:9100 -m raw -o printer-error-policy=retry-job
+        lpadmin -d ChironeTest
+      changed_when: false
+
+    - name: Firefox profile for the lab user
+      become_user: "{{ lab_user }}"
+      ansible.builtin.shell: |
+        ls -d ~/.mozilla/firefox/*.default* >/dev/null 2>&1 || \
+        timeout 60 {{ 'firefox-esr' if ansible_distribution == 'Debian' else 'firefox' }} --headless -CreateProfile default-lab
+      changed_when: false
+
+    - name: Italian timezone (probes report it; real users are not on UTC)
+      community.general.timezone: {name: Europe/Rome}
+
+    - name: Use NTP (faults turn it off)
+      ansible.builtin.command: timedatectl set-ntp true
+      changed_when: false
+
+    - name: Reboot so the user session picks up groups and sound devices
+      ansible.builtin.reboot: {reboot_timeout: 600}
+      when: lab_groups is changed
+
+    # Cloud images configure the wired card through netplan + systemd-networkd, so
+    # NetworkManager lists it as "unmanaged" and every nmcli fault on the wired
+    # connection fails to inject (net_device_disconnected, dns_manual_wrong).
+    # A desktop has a NetworkManager connection on DHCP, DNS from the router:
+    # give the VM the same. The fixed lab address stays as an extra address,
+    # so SSH through the jump host keeps working; the collector itself goes
+    # through the guest agent and does not need the network.
+    - name: Wired connection managed by NetworkManager, like a desktop
+      notify: Reboot for the network change
+      block:
+        - ansible.builtin.copy:
+            dest: /etc/cloud/cloud.cfg.d/99-chirone-no-network.cfg
+            content: "network: {config: disabled}\n"
+            mode: "0644"
+        - ansible.builtin.copy:
+            dest: /etc/netplan/50-cloud-init.yaml
+            content: "network: {version: 2}\n"
+            mode: "0600"
+        # Without netplan's set-name the card keeps its real name (ens18, like
+        # a PC), so the connection is not bound to an interface name; and no
+        # automatic "Wired connection 1" next to ours.
+        - ansible.builtin.copy:
+            dest: /etc/NetworkManager/conf.d/90-chirone-lab.conf
+            content: "[main]\nno-auto-default=*\n"
+            mode: "0644"
+        # Ubuntu ships a rule that leaves ethernet to netplan; an empty file
+        # with the same name in /etc overrides it.
+        - ansible.builtin.copy:
+            dest: /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
+            content: ""
+            mode: "0644"
+        # networkd has nothing left to manage, but its wait-online still
+        # holds the boot ~2 min waiting for it (and NetworkManager with it):
+        # every lab reset paid that. A desktop leaves the network to NM only.
+        - ansible.builtin.systemd:
+            name: "{{ item }}"
+            enabled: false
+          loop: [systemd-networkd-wait-online.service, systemd-networkd.service, systemd-networkd.socket]
+        - ansible.builtin.systemd: {name: NetworkManager-wait-online.service, enabled: true}
+        - ansible.builtin.copy:
+            dest: /etc/NetworkManager/system-connections/Connessione via cavo 1.nmconnection
+            mode: "0600"
+            content: |
+              [connection]
+              id=Connessione via cavo 1
+              type=ethernet
+              autoconnect=true
+
+              [ipv4]
+              method=auto
+              address1={{ lab_address }}
+
+              [ipv6]
+              method=auto
+  handlers:
+    - name: Reboot for the network change
+      listen: reboot
+      ansible.builtin.reboot: {reboot_timeout: 600}

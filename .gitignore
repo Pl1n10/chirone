@@ -1,0 +1,12 @@
+__pycache__/
+*.egg-info/
+.venv/
+data/
+models/
+lab/config.yaml
+lab/ansible/inventory.ini
+eval/report*.json
+chirone.zip
+build/
+dist/
+.venv-train/

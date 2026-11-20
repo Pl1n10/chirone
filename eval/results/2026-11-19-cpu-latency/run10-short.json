@@ -1,0 +1,171 @@
+{
+  "backend": "http://127.0.0.1:8481",
+  "described_categories": false,
+  "step1_accuracy": 0.95,
+  "step2_fix_accuracy": 0.9875,
+  "step2_exact": 0.98125,
+  "invalid_rate": 0.0,
+  "escalation_recall": 1.0,
+  "false_fix_rate_healthy": 0.02,
+  "false_fix_unasked_rate_healthy": 0.02,
+  "step2_groups": {
+    "actions": {
+      "n": 25,
+      "exact": 0.92
+    },
+    "healthy": {
+      "n": 50,
+      "exact": 0.98
+    },
+    "repairs": {
+      "n": 85,
+      "exact": 1.0
+    }
+  },
+  "latency_s": {
+    "step2": {
+      "p50": 9.91410828800872,
+      "p95": 20.819779993005795
+    },
+    "step1": {
+      "p50": 1.272981610003626,
+      "p95": 2.2354780249879695
+    }
+  },
+  "latency_step2_by_category_s": {
+    "actions": {
+      "n": 25,
+      "p50": 19.959696907986654,
+      "p95": 21.973750481003663
+    },
+    "apps": {
+      "n": 1,
+      "p50": 8.473677683010465,
+      "p95": 8.473677683010465
+    },
+    "audio": {
+      "n": 27,
+      "p50": 8.921006135002244,
+      "p95": 12.024875538016204
+    },
+    "network": {
+      "n": 34,
+      "p50": 11.954858703014906,
+      "p95": 12.777041079010814
+    },
+    "other": {
+      "n": 15,
+      "p50": 3.8369360250071622,
+      "p95": 4.451515923021361
+    },
+    "printing": {
+      "n": 8,
+      "p50": 5.396656447002897,
+      "p95": 9.8928616210178
+    },
+    "storage": {
+      "n": 11,
+      "p50": 9.001716277009109,
+      "p95": 9.603525598999113
+    },
+    "system": {
+      "n": 12,
+      "p50": 19.864368899987312,
+      "p95": 22.064493209996726
+    },
+    "updates": {
+      "n": 27,
+      "p50": 9.91410828800872,
+      "p95": 13.311266954988241
+    }
+  },
+  "llamacpp_ms": {
+    "prompt_p50": 7384.3575,
+    "predict_p50": 1458.277
+  },
+  "per_fault_exact": {
+    "app.close": 1.0,
+    "app.open": 1.0,
+    "apt_bad_source": 1.0,
+    "apt_bad_source_thirdparty": 1.0,
+    "apt_broken_deps": 1.0,
+    "audio_muted": 1.0,
+    "audio_pipewire_down": 1.0,
+    "audio_volume_zero": 1.0,
+    "audio_wrong_default_sink": 1.0,
+    "control_large_apt_cache": 1.0,
+    "control_nothing_broken": 1.0,
+    "control_thirdparty_source": 1.0,
+    "cups_stopped": 1.0,
+    "disk_full_apt_cache": 1.0,
+    "disk_full_trash": 1.0,
+    "dns_manual_wrong": 1.0,
+    "dpkg_interrupted": 1.0,
+    "firefox_stale_lock": 1.0,
+    "fs_root_readonly": 1.0,
+    "healthy_negative": 0.98,
+    "net_device_disconnected": 1.0,
+    "net_networking_off": 1.0,
+    "net_nm_stopped": 1.0,
+    "net_wifi_radio_off": 1.0,
+    "offtopic": 1.0,
+    "print_queue_stuck": 1.0,
+    "printer_disabled": 1.0,
+    "proc_runaway": 1.0,
+    "reminder.set": 1.0,
+    "time_wrong_clock": 1.0,
+    "web.open_site": 0.833,
+    "web.search": 0.75
+  },
+  "per_fault_n": {
+    "app.close": 3,
+    "app.open": 5,
+    "apt_bad_source": 6,
+    "apt_bad_source_thirdparty": 1,
+    "apt_broken_deps": 7,
+    "audio_muted": 1,
+    "audio_pipewire_down": 4,
+    "audio_volume_zero": 2,
+    "audio_wrong_default_sink": 4,
+    "control_large_apt_cache": 3,
+    "control_nothing_broken": 6,
+    "control_thirdparty_source": 2,
+    "cups_stopped": 3,
+    "disk_full_apt_cache": 4,
+    "disk_full_trash": 4,
+    "dns_manual_wrong": 2,
+    "dpkg_interrupted": 4,
+    "firefox_stale_lock": 1,
+    "fs_root_readonly": 4,
+    "healthy_negative": 50,
+    "net_device_disconnected": 5,
+    "net_networking_off": 3,
+    "net_nm_stopped": 4,
+    "net_wifi_radio_off": 1,
+    "offtopic": 4,
+    "print_queue_stuck": 1,
+    "printer_disabled": 2,
+    "proc_runaway": 6,
+    "reminder.set": 5,
+    "time_wrong_clock": 3,
+    "web.open_site": 6,
+    "web.search": 4
+  },
+  "step1_by_lang": {
+    "en": 1.0,
+    "it": 0.917
+  },
+  "step1_by_category": {
+    "actions": 0.944,
+    "audio": 1.0,
+    "network": 1.0,
+    "other": 1.0,
+    "printing": 1.0,
+    "storage": 1.0,
+    "updates": 0.667
+  },
+  "n": {
+    "step1": 40,
+    "step2": 160
+  }
+}

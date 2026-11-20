@@ -1,0 +1,26 @@
+# Everyday requests with a fixed label (no value to copy from the request).
+# The teacher writes requests for `it`/`en`; the label is `fix_id` + `params`.
+# web.open_site also gets the browser from the PC snapshot (build_dataset).
+site_email_gmail:  {fix_id: web.open_site, params: {site: email_gmail}, it: "aprire la posta di Gmail", en: "open their Gmail email"}
+site_email_outlook: {fix_id: web.open_site, params: {site: email_outlook}, it: "aprire la posta di Outlook / Hotmail", en: "open their Outlook / Hotmail email"}
+site_email_libero: {fix_id: web.open_site, params: {site: email_libero}, it: "aprire la posta di Libero", en: "open their Libero email"}
+site_whatsapp:     {fix_id: web.open_site, params: {site: whatsapp}, it: "aprire WhatsApp sul computer per scrivere ai parenti", en: "open WhatsApp on the computer to message relatives"}
+site_news_ansa:    {fix_id: web.open_site, params: {site: news_ansa}, it: "leggere le notizie sul sito dell'ANSA", en: "read the news on the ANSA website"}
+site_news_rai:     {fix_id: web.open_site, params: {site: news_rai}, it: "leggere le notizie di Rai News", en: "read the news on Rai News"}
+site_news_bbc:     {fix_id: web.open_site, params: {site: news_bbc}, it: "leggere le notizie della BBC", en: "read the news on the BBC"}
+site_tv_raiplay:   {fix_id: web.open_site, params: {site: tv_raiplay}, it: "rivedere un programma della Rai su RaiPlay", en: "watch a Rai programme again on RaiPlay"}
+site_youtube:      {fix_id: web.open_site, params: {site: youtube}, it: "aprire YouTube per guardare dei video", en: "open YouTube to watch videos"}
+site_inps:         {fix_id: web.open_site, params: {site: inps}, it: "andare sul sito dell'INPS (pensione, cedolino)", en: "go to the INPS website (Italian pensions)"}
+site_health:       {fix_id: web.open_site, params: {site: health_record}, it: "aprire il fascicolo sanitario per vedere referti e ricette", en: "open the online health record to see test results and prescriptions"}
+site_tax:          {fix_id: web.open_site, params: {site: tax_agency}, it: "andare sul sito dell'Agenzia delle Entrate", en: "go to the Italian tax agency website"}
+site_weather:      {fix_id: web.open_site, params: {site: weather}, it: "vedere le previsioni del tempo", en: "see the weather forecast"}
+site_wikipedia:    {fix_id: web.open_site, params: {site: wikipedia}, it: "aprire Wikipedia", en: "open Wikipedia"}
+folder_photos:     {fix_id: files.open_folder, params: {folder: photos}, it: "vedere le sue foto salvate sul computer", en: "see the photos saved on the computer"}
+folder_documents:  {fix_id: files.open_folder, params: {folder: documents}, it: "trovare i suoi documenti salvati", en: "find their saved documents"}
+folder_downloads:  {fix_id: files.open_folder, params: {folder: downloads}, it: "trovare un file appena scaricato da internet (un referto, un modulo)", en: "find a file they just downloaded (a test result, a form)"}
+folder_music:      {fix_id: files.open_folder, params: {folder: music}, it: "trovare la sua musica salvata", en: "find their saved music"}
+folder_videos:     {fix_id: files.open_folder, params: {folder: videos}, it: "trovare i video salvati", en: "find their saved videos"}
+folder_desktop:    {fix_id: files.open_folder, params: {folder: desktop}, it: "vedere i file sulla scrivania (desktop)", en: "see the files on the desktop"}
+volume_up:         {fix_id: audio.volume_up, params: {}, it: "alzare il volume perché si sente piano", en: "turn the volume up because it's too quiet"}
+volume_down:       {fix_id: audio.volume_down, params: {}, it: "abbassare il volume perché è troppo alto", en: "turn the volume down because it's too loud"}
+restart:           {fix_id: system.restart, params: {}, it: "riavviare il computer (spegnerlo e riaccenderlo)", en: "restart the computer (turn it off and on again)"}

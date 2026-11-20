@@ -1,0 +1,24 @@
+# Copy to lab/config.yaml (git-ignored). Token needs VM.Audit, VM.PowerMgmt,
+# VM.Snapshot.Rollback and VM.Monitor/VM.GuestAgent.* on the lab VMs only.
+# backend: api (REST + token, below) or ssh-qm (ssh <host> sudo qm, no token)
+backend: api
+ssh_qm:
+  host: pve-agent        # ssh alias with sudo qm on the node holding the VMs
+proxmox:
+  host: pve.lan
+  user: chirone@pve
+  token_name: lab
+  token_value_env: CHIRONE_PVE_TOKEN   # read from the environment, never stored here
+  verify_ssl: false
+  node: pve
+
+lab_user: nonna          # desktop user inside the VMs (lingering enabled)
+chirone_bin: /opt/chirone/bin/chirone
+snapshot: clean           # disk-only snapshot: rollback = cold boot, clean clock
+reps: 8                   # samples per fault per VM
+
+vms:
+  - {name: debian12-xfce, vmid: 9101, os: debian12}
+  - {name: mint22-xfce,   vmid: 9102, os: mint22}
+
+out_dir: data/samples

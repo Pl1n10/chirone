@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chirone"
+version = "0.0.1"
+description = "A tiny, offline troubleshooting model that keeps old PCs alive on Linux"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+dependencies = ["pyyaml>=6", "pydantic>=2.5", "httpx>=0.25", "jsonschema>=4"]
+
+[project.optional-dependencies]
+lab = ["proxmoxer>=2.0", "requests>=2.31"]
+train = ["torch", "transformers>=4.50", "trl>=0.19", "peft>=0.14", "datasets>=3"]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+chirone = "chirone.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+chirone = ["catalog/*.yaml"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

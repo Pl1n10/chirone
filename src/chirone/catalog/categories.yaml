@@ -1,0 +1,57 @@
+# Step 1 picks one category from the complaint alone (tiny prompt, ~5 output tokens).
+# Code then runs that category's probe bundle and step 2 picks a fix among
+# `fixes` + the global ones. Categories follow what the person *perceives*,
+# not the root cause: a wrong clock shows up as "websites are broken", so
+# time.enable_ntp is reachable from `network` too.
+
+global_fixes: [escalate.human, noop.no_issue_found, info.what_i_can_do]
+
+categories:
+  - id: network
+    label: {it: "Internet e rete", en: "Internet and network"}
+    probes: [nm_service, nm_general, nm_devices, nm_active, ip_route, ping_ip, dns_lookup, nm_dns, time_status]
+    fixes: [net.enable_networking, net.connect_device, net.wifi_radio_on, dns.reset_to_auto, svc.restart, time.enable_ntp]
+
+  - id: storage
+    label: {it: "Spazio su disco", en: "Disk space"}
+    probes: [disk_usage, root_mount, home_usage, apt_cache_usage, journal_usage]
+    fixes: [disk.apt_clean, disk.empty_trash, disk.clear_thumbnails]
+
+  - id: updates
+    label: {it: "Aggiornamenti e programmi", en: "Updates and software"}
+    probes: [apt_lock, dpkg_audit, apt_check, apt_update, apt_sources, disk_usage]
+    fixes: [apt.wait_for_lock, apt.dpkg_configure, apt.fix_broken, apt.disable_source, disk.apt_clean]
+
+  - id: printing
+    label: {it: "Stampante", en: "Printer"}
+    probes: [cups_active, lpstat_printers, lpstat_jobs, usb_devices]
+    fixes: [svc.restart, print.enable_printer, print.clear_queue]
+
+  - id: audio
+    label: {it: "Audio", en: "Sound"}
+    probes: [audio_server, audio_services, audio_sinks, audio_mute, audio_volume]
+    fixes: [audio.unmute, audio.set_volume, audio.set_default_sink, audio.restart_stack]
+
+  - id: apps
+    label: {it: "Programmi che non si aprono", en: "Apps that won't open"}
+    probes: [firefox_running, firefox_locks, top_procs]
+    fixes: [app.firefox_clear_stale_lock, proc.terminate_user_process]
+
+  - id: system
+    label: {it: "Computer lento o strano", en: "Slow or odd computer"}
+    probes: [uptime, memory, top_procs, root_mount, disk_usage, failed_units, kernel_errors, time_status]
+    fixes: [proc.terminate_user_process, time.enable_ntp]
+
+  # Not a fault: the person asks for something to be done ("open the
+  # calculator", "look up the chemist's opening hours").
+  - id: actions
+    label: {it: "Fare qualcosa", en: "Do something"}
+    source: requests
+    probes: [apps_installed, browser_default]
+    fixes: [app.open, app.close, system.restart, web.search, web.open_site, files.open_folder,
+            audio.volume_up, audio.volume_down, audio.set_volume, reminder.set]
+
+  - id: other
+    label: {it: "Altro", en: "Other"}
+    probes: [os_release]
+    fixes: []

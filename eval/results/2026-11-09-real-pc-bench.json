@@ -1,0 +1,1033 @@
+{
+ "manifest": "run-20261109072908",
+ "startedAt": 1794221935.9406734,
+ "threads": 4,
+ "memBefore": 2228219904,
+ "loadBefore": 0.51,
+ "bench": {
+  "chirone-Q8_0.gguf": [
+   {
+    "build_commit": "80d2c0c",
+    "build_number": 1,
+    "cpu_info": "Intel(R) Core(TM)2 Quad CPU    Q8300  @ 2.50GHz",
+    "gpu_info": "",
+    "backends": "CPU",
+    "model_filename": "/srv/bench/chirone-Q8_0.gguf",
+    "model_type": "qwen35 0.8B Q8_0",
+    "model_size": 800881920,
+    "model_n_params": 752393024,
+    "n_batch": 2048,
+    "n_ubatch": 512,
+    "n_threads": 4,
+    "cpu_mask": "0x0",
+    "cpu_strict": false,
+    "poll": 50,
+    "type_k": "f16",
+    "type_v": "f16",
+    "n_gpu_layers": -1,
+    "n_cpu_moe": 0,
+    "split_mode": "layer",
+    "main_gpu": 0,
+    "no_kv_offload": false,
+    "flash_attn": -1,
+    "devices": "auto",
+    "tensor_split": "0.00",
+    "tensor_buft_overrides": "none",
+    "load_mode": "auto",
+    "lazy_mode": "auto",
+    "embeddings": false,
+    "no_op_offload": 0,
+    "no_host": false,
+    "repack": true,
+    "fit_target": 0,
+    "fit_min_ctx": 0,
+    "n_prompt": 128,
+    "n_gen": 0,
+    "n_depth": 0,
+    "test_time": "2026-11-09T10:58:59Z",
+    "avg_ns": 12299346062,
+    "stddev_ns": 80817086,
+    "avg_ts": 10.407357,
+    "stddev_ts": 0.068332,
+    "samples_ns": [
+     12383268466,
+     12222041552,
+     12292728170
+    ],
+    "samples_ts": [
+     10.3365,
+     10.4729,
+     10.4127
+    ]
+   },
+   {
+    "build_commit": "80d2c0c",
+    "build_number": 1,
+    "cpu_info": "Intel(R) Core(TM)2 Quad CPU    Q8300  @ 2.50GHz",
+    "gpu_info": "",
+    "backends": "CPU",
+    "model_filename": "/srv/bench/chirone-Q8_0.gguf",
+    "model_type": "qwen35 0.8B Q8_0",
+    "model_size": 800881920,
+    "model_n_params": 752393024,
+    "n_batch": 2048,
+    "n_ubatch": 512,
+    "n_threads": 4,
+    "cpu_mask": "0x0",
+    "cpu_strict": false,
+    "poll": 50,
+    "type_k": "f16",
+    "type_v": "f16",
+    "n_gpu_layers": -1,
+    "n_cpu_moe": 0,
+    "split_mode": "layer",
+    "main_gpu": 0,
+    "no_kv_offload": false,
+    "flash_attn": -1,
+    "devices": "auto",
+    "tensor_split": "0.00",
+    "tensor_buft_overrides": "none",
+    "load_mode": "auto",
+    "lazy_mode": "auto",
+    "embeddings": false,
+    "no_op_offload": 0,
+    "no_host": false,
+    "repack": true,
+    "fit_target": 0,
+    "fit_min_ctx": 0,
+    "n_prompt": 384,
+    "n_gen": 0,
+    "n_depth": 0,
+    "test_time": "2026-11-09T10:59:48Z",
+    "avg_ns": 37386541217,
+    "stddev_ns": 433632305,
+    "avg_ts": 10.271991,
+    "stddev_ts": 0.118394,
+    "samples_ns": [
+     37186567682,
+     37884076571,
+     37088979399
+    ],
+    "samples_ts": [
+     10.3263,
+     10.1362,
+     10.3535
+    ]
+   },
+   {
+    "build_commit": "80d2c0c",
+    "build_number": 1,
+    "cpu_info": "Intel(R) Core(TM)2 Quad CPU    Q8300  @ 2.50GHz",
+    "gpu_info": "",
+    "backends": "CPU",
+    "model_filename": "/srv/bench/chirone-Q8_0.gguf",
+    "model_type": "qwen35 0.8B Q8_0",
+    "model_size": 800881920,
+    "model_n_params": 752393024,
+    "n_batch": 2048,
+    "n_ubatch": 512,
+    "n_threads": 4,
+    "cpu_mask": "0x0",
+    "cpu_strict": false,
+    "poll": 50,
+    "type_k": "f16",
+    "type_v": "f16",
+    "n_gpu_layers": -1,
+    "n_cpu_moe": 0,
+    "split_mode": "layer",
+    "main_gpu": 0,
+    "no_kv_offload": false,
+    "flash_attn": -1,
+    "devices": "auto",
+    "tensor_split": "0.00",
+    "tensor_buft_overrides": "none",
+    "load_mode": "auto",
+    "lazy_mode": "auto",
+    "embeddings": false,
+    "no_op_offload": 0,
+    "no_host": false,
+    "repack": true,
+    "fit_target": 0,
+    "fit_min_ctx": 0,
+    "n_prompt": 600,
+    "n_gen": 0,
+    "n_depth": 0,
+    "test_time": "2026-11-09T11:02:18Z",
+    "avg_ns": 60072805016,
+    "stddev_ns": 180976889,
+    "avg_ts": 9.987941,
+    "stddev_ts": 0.030086,
+    "samples_ns": [
+     59894709219,
+     60256530947,
+     60067174884
+    ],
+    "samples_ts": [
+     10.0176,
+     9.95743,
+     9.98882
+    ]
+   },
+   {
+    "build_commit": "80d2c0c",
+    "build_number": 1,
+    "cpu_info": "Intel(R) Core(TM)2 Quad CPU    Q8300  @ 2.50GHz",
+    "gpu_info": "",
+    "backends": "CPU",
+    "model_filename": "/srv/bench/chirone-Q8_0.gguf",
+    "model_type": "qwen35 0.8B Q8_0",
+    "model_size": 800881920,
+    "model_n_params": 752393024,
+    "n_batch": 2048,
+    "n_ubatch": 512,
+    "n_threads": 4,
+    "cpu_mask": "0x0",
+    "cpu_strict": false,
+    "poll": 50,
+    "type_k": "f16",
+    "type_v": "f16",
+    "n_gpu_layers": -1,
+    "n_cpu_moe": 0,
+    "split_mode": "layer",
+    "main_gpu": 0,
+    "no_kv_offload": false,
+    "flash_attn": -1,
+    "devices": "auto",
+    "tensor_split": "0.00",
+    "tensor_buft_overrides": "none",
+    "load_mode": "auto",
+    "lazy_mode": "auto",
+    "embeddings": false,
+    "no_op_offload": 0,
+    "no_host": false,
+    "repack": true,
+    "fit_target": 0,
+    "fit_min_ctx": 0,
+    "n_prompt": 0,
+    "n_gen": 24,
+    "n_depth": 0,
+    "test_time": "2026-11-09T11:06:18Z",
+    "avg_ns": 4615448317,
+    "stddev_ns": 55233206,
+    "avg_ts": 5.200428,
+    "stddev_ts": 0.06264,
+    "samples_ns": [
+     4653666861,
+     4640556747,
+     4552121345
+    ],
+    "samples_ts": [
+     5.15722,
+     5.17179,
+     5.27227
+    ]
+   }
+  ],
+  "chirone-Q4_K_M.gguf": [
+   {
+    "build_commit": "80d2c0c",
+    "build_number": 1,
+    "cpu_info": "Intel(R) Core(TM)2 Quad CPU    Q8300  @ 2.50GHz",
+    "gpu_info": "",
+    "backends": "CPU",
+    "model_filename": "/srv/bench/chirone-Q4_K_M.gguf",
+    "model_type": "qwen35 0.8B Q4_K - Medium",
+    "model_size": 518335744,
+    "model_n_params": 752393024,
+    "n_batch": 2048,
+    "n_ubatch": 512,
+    "n_threads": 4,
+    "cpu_mask": "0x0",
+    "cpu_strict": false,
+    "poll": 50,
+    "type_k": "f16",
+    "type_v": "f16",
+    "n_gpu_layers": -1,
+    "n_cpu_moe": 0,
+    "split_mode": "layer",
+    "main_gpu": 0,
+    "no_kv_offload": false,
+    "flash_attn": -1,
+    "devices": "auto",
+    "tensor_split": "0.00",
+    "tensor_buft_overrides": "none",
+    "load_mode": "auto",
+    "lazy_mode": "auto",
+    "embeddings": false,
+    "no_op_offload": 0,
+    "no_host": false,
+    "repack": true,
+    "fit_target": 0,
+    "fit_min_ctx": 0,
+    "n_prompt": 128,
+    "n_gen": 0,
+    "n_depth": 0,
+    "test_time": "2026-11-09T11:06:36Z",
+    "avg_ns": 18433459851,
+    "stddev_ns": 588286545,
+    "avg_ts": 6.948528,
+    "stddev_ts": 0.217804,
+    "samples_ns": [
+     18127650715,
+     18061062945,
+     19111665893
+    ],
+    "samples_ts": [
+     7.06104,
+     7.08707,
+     6.69748
+    ]
+   },
+   {
+    "build_commit": "80d2c0c",
+    "build_number": 1,
+    "cpu_info": "Intel(R) Core(TM)2 Quad CPU    Q8300  @ 2.50GHz",
+    "gpu_info": "",
+    "backends": "CPU",
+    "model_filename": "/srv/bench/chirone-Q4_K_M.gguf",
+    "model_type": "qwen35 0.8B Q4_K - Medium",
+    "model_size": 518335744,
+    "model_n_params": 752393024,
+    "n_batch": 2048,
+    "n_ubatch": 512,
+    "n_threads": 4,
+    "cpu_mask": "0x0",
+    "cpu_strict": false,
+    "poll": 50,
+    "type_k": "f16",
+    "type_v": "f16",
+    "n_gpu_layers": -1,
+    "n_cpu_moe": 0,
+    "split_mode": "layer",
+    "main_gpu": 0,
+    "no_kv_offload": false,
+    "flash_attn": -1,
+    "devices": "auto",
+    "tensor_split": "0.00",
+    "tensor_buft_overrides": "none",
+    "load_mode": "auto",
+    "lazy_mode": "auto",
+    "embeddings": false,
+    "no_op_offload": 0,
+    "no_host": false,
+    "repack": true,
+    "fit_target": 0,
+    "fit_min_ctx": 0,
+    "n_prompt": 384,
+    "n_gen": 0,
+    "n_depth": 0,
+    "test_time": "2026-11-09T11:07:49Z",
+    "avg_ns": 55219455124,
+    "stddev_ns": 285691983,
+    "avg_ts": 6.954195,
+    "stddev_ts": 0.036086,
+    "samples_ns": [
+     55368073424,
+     54890088629,
+     55400203321
+    ],
+    "samples_ts": [
+     6.9354,
+     6.9958,
+     6.93138
+    ]
+   },
+   {
+    "build_commit": "80d2c0c",
+    "build_number": 1,
+    "cpu_info": "Intel(R) Core(TM)2 Quad CPU    Q8300  @ 2.50GHz",
+    "gpu_info": "",
+    "backends": "CPU",
+    "model_filename": "/srv/bench/chirone-Q4_K_M.gguf",
+    "model_type": "qwen35 0.8B Q4_K - Medium",
+    "model_size": 518335744,
+    "model_n_params": 752393024,
+    "n_batch": 2048,
+    "n_ubatch": 512,
+    "n_threads": 4,
+    "cpu_mask": "0x0",
+    "cpu_strict": false,
+    "poll": 50,
+    "type_k": "f16",
+    "type_v": "f16",
+    "n_gpu_layers": -1,
+    "n_cpu_moe": 0,
+    "split_mode": "layer",
+    "main_gpu": 0,
+    "no_kv_offload": false,
+    "flash_attn": -1,
+    "devices": "auto",
+    "tensor_split": "0.00",
+    "tensor_buft_overrides": "none",
+    "load_mode": "auto",
+    "lazy_mode": "auto",
+    "embeddings": false,
+    "no_op_offload": 0,
+    "no_host": false,
+    "repack": true,
+    "fit_target": 0,
+    "fit_min_ctx": 0,
+    "n_prompt": 600,
+    "n_gen": 0,
+    "n_depth": 0,
+    "test_time": "2026-11-09T11:11:30Z",
+    "avg_ns": 87793082428,
+    "stddev_ns": 241801107,
+    "avg_ts": 6.834286,
+    "stddev_ts": 0.018833,
+    "samples_ns": [
+     87537835199,
+     87822703927,
+     88018708158
+    ],
+    "samples_ts": [
+     6.85418,
+     6.83195,
+     6.81673
+    ]
+   },
+   {
+    "build_commit": "80d2c0c",
+    "build_number": 1,
+    "cpu_info": "Intel(R) Core(TM)2 Quad CPU    Q8300  @ 2.50GHz",
+    "gpu_info": "",
+    "backends": "CPU",
+    "model_filename": "/srv/bench/chirone-Q4_K_M.gguf",
+    "model_type": "qwen35 0.8B Q4_K - Medium",
+    "model_size": 518335744,
+    "model_n_params": 752393024,
+    "n_batch": 2048,
+    "n_ubatch": 512,
+    "n_threads": 4,
+    "cpu_mask": "0x0",
+    "cpu_strict": false,
+    "poll": 50,
+    "type_k": "f16",
+    "type_v": "f16",
+    "n_gpu_layers": -1,
+    "n_cpu_moe": 0,
+    "split_mode": "layer",
+    "main_gpu": 0,
+    "no_kv_offload": false,
+    "flash_attn": -1,
+    "devices": "auto",
+    "tensor_split": "0.00",
+    "tensor_buft_overrides": "none",
+    "load_mode": "auto",
+    "lazy_mode": "auto",
+    "embeddings": false,
+    "no_op_offload": 0,
+    "no_host": false,
+    "repack": true,
+    "fit_target": 0,
+    "fit_min_ctx": 0,
+    "n_prompt": 0,
+    "n_gen": 24,
+    "n_depth": 0,
+    "test_time": "2026-11-09T11:17:21Z",
+    "avg_ns": 6487407936,
+    "stddev_ns": 51076631,
+    "avg_ts": 3.699627,
+    "stddev_ts": 0.029071,
+    "samples_ns": [
+     6441335182,
+     6542331385,
+     6478557243
+    ],
+    "samples_ts": [
+     3.72594,
+     3.66842,
+     3.70453
+    ]
+   }
+  ]
+ },
+ "serve": {
+  "chirone-Q8_0.gguf": {
+   "loadSeconds": 4.1,
+   "peakRssKb": 1791816,
+   "requests": [
+    {
+     "step": 1,
+     "seconds": 6.54,
+     "ok": true,
+     "timings": {
+      "cache_n": 0,
+      "prompt_n": 56,
+      "prompt_ms": 5414.401,
+      "prompt_per_token_ms": 96.68573214285713,
+      "prompt_per_second": 10.34278768787166,
+      "predicted_n": 7,
+      "predicted_ms": 1117.874,
+      "predicted_per_token_ms": 186.31233333333333,
+      "predicted_per_second": 5.367331201906476
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 3.59,
+     "ok": false,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 23,
+      "prompt_ms": 2380.138,
+      "prompt_per_token_ms": 103.48426086956522,
+      "prompt_per_second": 9.663305236923238,
+      "predicted_n": 7,
+      "predicted_ms": 1207.167,
+      "predicted_per_token_ms": 201.19449999999998,
+      "predicted_per_second": 4.970314794887535
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 68.86,
+     "ok": true,
+     "timings": {
+      "cache_n": 0,
+      "prompt_n": 622,
+      "prompt_ms": 61273.84,
+      "prompt_per_token_ms": 98.5109967845659,
+      "prompt_per_second": 10.151150964261422,
+      "predicted_n": 34,
+      "predicted_ms": 7549.89,
+      "predicted_per_token_ms": 228.78454545454545,
+      "predicted_per_second": 4.370924609497622
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 30.88,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 270,
+      "prompt_ms": 26313.584,
+      "prompt_per_token_ms": 97.45771851851852,
+      "prompt_per_second": 10.26085994215003,
+      "predicted_n": 21,
+      "predicted_ms": 4532.618,
+      "predicted_per_token_ms": 226.63090000000003,
+      "predicted_per_second": 4.412460966267177
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 36.39,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 303,
+      "prompt_ms": 29994.61,
+      "prompt_per_token_ms": 98.99211221122113,
+      "prompt_per_second": 10.101814959421041,
+      "predicted_n": 31,
+      "predicted_ms": 6368.465,
+      "predicted_per_token_ms": 212.28216666666668,
+      "predicted_per_second": 4.710711293851815
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 3.32,
+     "ok": true,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 20,
+      "prompt_ms": 2127.232,
+      "prompt_per_token_ms": 106.3616,
+      "prompt_per_second": 9.401889403694566,
+      "predicted_n": 7,
+      "predicted_ms": 1156.501,
+      "predicted_per_token_ms": 192.75016666666667,
+      "predicted_per_second": 5.18806295887336
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 3.36,
+     "ok": true,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 21,
+      "prompt_ms": 2151.987,
+      "prompt_per_token_ms": 102.47557142857143,
+      "prompt_per_second": 9.75842326185056,
+      "predicted_n": 7,
+      "predicted_ms": 1203.017,
+      "predicted_per_token_ms": 200.50283333333334,
+      "predicted_per_second": 4.987460692575416
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 32.16,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 286,
+      "prompt_ms": 27798.285,
+      "prompt_per_token_ms": 97.1968006993007,
+      "prompt_per_second": 10.288404482506744,
+      "predicted_n": 21,
+      "predicted_ms": 4326.77,
+      "predicted_per_token_ms": 216.3385,
+      "predicted_per_second": 4.6223857519581575
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 3.11,
+     "ok": true,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 19,
+      "prompt_ms": 1917.876,
+      "prompt_per_token_ms": 100.94084210526316,
+      "prompt_per_second": 9.906792722782912,
+      "predicted_n": 7,
+      "predicted_ms": 1160.751,
+      "predicted_per_token_ms": 193.4585,
+      "predicted_per_second": 5.169067267656888
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 71.51,
+     "ok": true,
+     "timings": {
+      "cache_n": 0,
+      "prompt_n": 682,
+      "prompt_ms": 66921.499,
+      "prompt_per_token_ms": 98.1253651026393,
+      "prompt_per_second": 10.191044883797359,
+      "predicted_n": 21,
+      "predicted_ms": 4572.793,
+      "predicted_per_token_ms": 228.63965,
+      "predicted_per_second": 4.373694588843186
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 39.51,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 307,
+      "prompt_ms": 29815.229,
+      "prompt_per_token_ms": 97.11800977198696,
+      "prompt_per_second": 10.296751368235341,
+      "predicted_n": 46,
+      "predicted_ms": 9656.118,
+      "predicted_per_token_ms": 214.5804,
+      "predicted_per_second": 4.660257880030049
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 11.93,
+     "ok": false,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 73,
+      "prompt_ms": 7981.583,
+      "prompt_per_token_ms": 109.33675342465753,
+      "prompt_per_second": 9.14605536270186,
+      "predicted_n": 21,
+      "predicted_ms": 3914.553,
+      "predicted_per_token_ms": 195.72764999999998,
+      "predicted_per_second": 5.109140175136217
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 24.62,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 206,
+      "prompt_ms": 20357.836,
+      "prompt_per_token_ms": 98.82444660194174,
+      "prompt_per_second": 10.118953704116684,
+      "predicted_n": 21,
+      "predicted_ms": 4232.194,
+      "predicted_per_token_ms": 211.60970000000003,
+      "predicted_per_second": 4.725681289657326
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 12.29,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 82,
+      "prompt_ms": 8002.52,
+      "prompt_per_token_ms": 97.59170731707317,
+      "prompt_per_second": 10.246772266735977,
+      "predicted_n": 21,
+      "predicted_ms": 4247.23,
+      "predicted_per_token_ms": 212.36149999999998,
+      "predicted_per_second": 4.708951481318413
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 3.7,
+     "ok": true,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 22,
+      "prompt_ms": 2538.863,
+      "prompt_per_token_ms": 115.40286363636363,
+      "prompt_per_second": 8.665296236937559,
+      "predicted_n": 7,
+      "predicted_ms": 1128.378,
+      "predicted_per_token_ms": 188.063,
+      "predicted_per_second": 5.317367052530269
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 3.47,
+     "ok": true,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 22,
+      "prompt_ms": 2235.435,
+      "prompt_per_token_ms": 101.61068181818182,
+      "prompt_per_second": 9.841484990617039,
+      "predicted_n": 7,
+      "predicted_ms": 1225.751,
+      "predicted_per_token_ms": 204.29183333333333,
+      "predicted_per_second": 4.8949582745598414
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 4.28,
+     "ok": true,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 32,
+      "prompt_ms": 3131.465,
+      "prompt_per_token_ms": 97.85828125,
+      "prompt_per_second": 10.218859224037312,
+      "predicted_n": 7,
+      "predicted_ms": 1141.467,
+      "predicted_per_token_ms": 190.24450000000002,
+      "predicted_per_second": 5.25639374594272
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 4.0,
+     "ok": true,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 29,
+      "prompt_ms": 2883.198,
+      "prompt_per_token_ms": 99.42062068965517,
+      "prompt_per_second": 10.058275567616237,
+      "predicted_n": 7,
+      "predicted_ms": 1116.12,
+      "predicted_per_token_ms": 186.01999999999998,
+      "predicted_per_second": 5.37576604666165
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 29.15,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 257,
+      "prompt_ms": 24879.755,
+      "prompt_per_token_ms": 96.80838521400779,
+      "prompt_per_second": 10.329683712721446,
+      "predicted_n": 21,
+      "predicted_ms": 4246.841,
+      "predicted_per_token_ms": 212.34205000000003,
+      "predicted_per_second": 4.709382809481212
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 32.29,
+     "ok": false,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 281,
+      "prompt_ms": 27900.176,
+      "prompt_per_token_ms": 99.28888256227758,
+      "prompt_per_second": 10.071621053573283,
+      "predicted_n": 21,
+      "predicted_ms": 4361.362,
+      "predicted_per_token_ms": 218.06810000000002,
+      "predicted_per_second": 4.585723450610153
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 55.47,
+     "ok": true,
+     "timings": {
+      "cache_n": 106,
+      "prompt_n": 512,
+      "prompt_ms": 49942.951,
+      "prompt_per_token_ms": 97.544826171875,
+      "prompt_per_second": 10.251696981221635,
+      "predicted_n": 25,
+      "predicted_ms": 5483.265,
+      "predicted_per_token_ms": 228.469375,
+      "predicted_per_second": 4.376954241678999
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 3.01,
+     "ok": true,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 17,
+      "prompt_ms": 1832.157,
+      "prompt_per_token_ms": 107.77394117647059,
+      "prompt_per_second": 9.278680811742662,
+      "predicted_n": 7,
+      "predicted_ms": 1136.383,
+      "predicted_per_token_ms": 189.39716666666666,
+      "predicted_per_second": 5.279910030333083
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 59.62,
+     "ok": false,
+     "timings": {
+      "cache_n": 106,
+      "prompt_n": 515,
+      "prompt_ms": 50740.379,
+      "prompt_per_token_ms": 98.5250077669903,
+      "prompt_per_second": 10.149707395760682,
+      "predicted_n": 40,
+      "predicted_ms": 8852.44,
+      "predicted_per_token_ms": 226.98564102564103,
+      "predicted_per_second": 4.405565019361894
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 67.33,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 613,
+      "prompt_ms": 61042.798,
+      "prompt_per_token_ms": 99.58042088091355,
+      "prompt_per_second": 10.04213470031305,
+      "predicted_n": 29,
+      "predicted_ms": 6254.727,
+      "predicted_per_token_ms": 223.38310714285714,
+      "predicted_per_second": 4.476614247112624
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 24.88,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 200,
+      "prompt_ms": 19294.473,
+      "prompt_per_token_ms": 96.47236500000001,
+      "prompt_per_second": 10.365662747046784,
+      "predicted_n": 27,
+      "predicted_ms": 5532.749,
+      "predicted_per_token_ms": 212.79803846153845,
+      "predicted_per_second": 4.699291437222256
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 36.06,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 321,
+      "prompt_ms": 30874.879,
+      "prompt_per_token_ms": 96.18342367601247,
+      "prompt_per_second": 10.39680187896445,
+      "predicted_n": 21,
+      "predicted_ms": 5154.499,
+      "predicted_per_token_ms": 257.72495,
+      "predicted_per_second": 3.880105515589391
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 3.46,
+     "ok": true,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 18,
+      "prompt_ms": 1869.294,
+      "prompt_per_token_ms": 103.84966666666668,
+      "prompt_per_second": 9.62930389762124,
+      "predicted_n": 7,
+      "predicted_ms": 1546.886,
+      "predicted_per_token_ms": 257.8143333333333,
+      "predicted_per_second": 3.8787602964924375
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 24.86,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 216,
+      "prompt_ms": 20602.898,
+      "prompt_per_token_ms": 95.38378703703704,
+      "prompt_per_second": 10.483962013499266,
+      "predicted_n": 21,
+      "predicted_ms": 4221.635,
+      "predicted_per_token_ms": 211.08175,
+      "predicted_per_second": 4.7375009919142705
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 56.46,
+     "ok": true,
+     "timings": {
+      "cache_n": 106,
+      "prompt_n": 515,
+      "prompt_ms": 50220.345,
+      "prompt_per_token_ms": 97.51523300970874,
+      "prompt_per_second": 10.25480808624473,
+      "predicted_n": 28,
+      "predicted_ms": 6197.133,
+      "predicted_per_token_ms": 229.52344444444444,
+      "predicted_per_second": 4.356853403017169
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 14.49,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 98,
+      "prompt_ms": 9795.885,
+      "prompt_per_token_ms": 99.95801020408163,
+      "prompt_per_second": 10.00420074347545,
+      "predicted_n": 25,
+      "predicted_ms": 4667.406,
+      "predicted_per_token_ms": 194.47525,
+      "predicted_per_second": 5.142042496410212
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 55.33,
+     "ok": true,
+     "timings": {
+      "cache_n": 106,
+      "prompt_n": 506,
+      "prompt_ms": 49456.324,
+      "prompt_per_token_ms": 97.73977075098814,
+      "prompt_per_second": 10.231249698218573,
+      "predicted_n": 27,
+      "predicted_ms": 5823.802,
+      "predicted_per_token_ms": 223.9923846153846,
+      "predicted_per_second": 4.464437492895534
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 32.34,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 281,
+      "prompt_ms": 27811.429,
+      "prompt_per_token_ms": 98.97305693950177,
+      "prompt_per_second": 10.103759860739267,
+      "predicted_n": 21,
+      "predicted_ms": 4476.376,
+      "predicted_per_token_ms": 223.8188,
+      "predicted_per_second": 4.467899926190293
+     }
+    },
+    {
+     "step": 1,
+     "seconds": 3.46,
+     "ok": true,
+     "timings": {
+      "cache_n": 38,
+      "prompt_n": 23,
+      "prompt_ms": 2322.854,
+      "prompt_per_token_ms": 100.99365217391303,
+      "prompt_per_second": 9.901612413005726,
+      "predicted_n": 7,
+      "predicted_ms": 1117.464,
+      "predicted_per_token_ms": 186.244,
+      "predicted_per_second": 5.369300487532485
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 34.15,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 307,
+      "prompt_ms": 29927.886,
+      "prompt_per_token_ms": 97.48497068403908,
+      "prompt_per_second": 10.257991493284893,
+      "predicted_n": 21,
+      "predicted_ms": 4199.623,
+      "predicted_per_token_ms": 209.98114999999999,
+      "predicted_per_second": 4.762332237917547
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 57.7,
+     "ok": true,
+     "timings": {
+      "cache_n": 106,
+      "prompt_n": 512,
+      "prompt_ms": 50375.966,
+      "prompt_per_token_ms": 98.39055859375,
+      "prompt_per_second": 10.163576813594005,
+      "predicted_n": 33,
+      "predicted_ms": 7274.626,
+      "predicted_per_token_ms": 227.3320625,
+      "predicted_per_second": 4.398851569826407
+     }
+    },
+    {
+     "step": 2,
+     "seconds": 29.11,
+     "ok": true,
+     "timings": {
+      "cache_n": 64,
+      "prompt_n": 254,
+      "prompt_ms": 24009.429,
+      "prompt_per_token_ms": 94.52531102362205,
+      "prompt_per_second": 10.579177039154075,
+      "predicted_n": 25,
+      "predicted_ms": 5054.558,
+      "predicted_per_token_ms": 210.60658333333333,
+      "predicted_per_second": 4.748189653773881
+     }
+    }
+   ]
+  }
+ },
+ "outcome": "completed",
+ "finishedAt": 1794224048.874794,
+ "minMemAvailable": 1387618304,
+ "maxLoad5": 4.46
+}

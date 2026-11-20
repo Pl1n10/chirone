@@ -1,0 +1,23 @@
+# Student candidates, smallest first. The Veriton (Core 2 Quad, no AVX, 4 GB)
+# decides: start from the smallest model that reaches the accuracy target.
+# Verify repo ids and that the text-only weights load with AutoModelForCausalLM
+# (Qwen3.5 checkpoints ship a vision tower: check the model card).
+base_model: Qwen/Qwen3.5-0.8B
+revision: 2fc06364715b967f1860aea9cf38778875588b17   # Apache-2.0, checked 2026-11-08
+# base_model: Qwen/Qwen3.5-2B          # tier for 8 GB machines
+# base_model: ibm-granite/granite-4.1-3b
+
+data_dir: data/dataset
+output_dir: models/chirone-0.8b
+
+lora: false          # 0.8B full fine-tune fits on one 24 GB GPU; set true for 2B+ on small cards
+lora_r: 32
+lora_alpha: 64
+
+epochs: 3
+lr: 1.0e-5           # full FT; use ~2e-4 with LoRA
+batch_size: 16
+grad_accum: 2
+max_length: 1024
+eval_steps: 200
+seed: 13

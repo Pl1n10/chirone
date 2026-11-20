@@ -1,0 +1,231 @@
+# Read-only diagnostic probes.
+# Every probe runs with LC_ALL=C.UTF-8 so the model always sees the same
+# (English) tool output, whatever the desktop language is.
+# argv is never passed through a shell. "~" is expanded only at the start of
+# an element and only for non-root probes. "{name}" placeholders are filled
+# from validated action params (see playbooks.yaml).
+
+# --- system -------------------------------------------------------------
+- id: os_release
+  argv: [cat, /etc/os-release]
+  keep: '^(PRETTY_NAME|VERSION_ID|ID)='
+  max_lines: 4
+
+- id: uptime
+  argv: [uptime]
+  max_lines: 1
+
+- id: memory
+  argv: [free, -m]
+  max_lines: 3
+
+- id: top_procs
+  argv: [ps, -eo, 'pid,user,comm,pcpu,pmem', --sort=-pcpu]
+  max_lines: 5
+
+- id: proc_comm
+  description: Name of one process, used to guard proc.terminate_user_process
+  argv: [ps, -o, comm=, -p, '{pid}']
+  params: [pid]
+  max_lines: 1
+
+- id: proc_alive
+  argv: [ps, -o, pid=, -p, '{pid}']
+  params: [pid]
+  max_lines: 1
+
+- id: failed_units
+  argv: [systemctl, --failed, --no-legend, --plain]
+  max_lines: 8
+
+- id: kernel_errors
+  argv: [journalctl, -k, -b, -p, err, --no-pager, -o, cat, -n, '30']
+  root: true
+  max_lines: 5
+  tail: true
+
+- id: root_mount
+  argv: [findmnt, -n, -o, 'SOURCE,FSTYPE,OPTIONS', /]
+  max_lines: 1
+
+- id: time_status
+  argv: [timedatectl, show, -p, NTP, -p, NTPSynchronized, -p, TimeUSec, -p, Timezone]
+  max_lines: 4
+
+# --- storage ------------------------------------------------------------
+- id: disk_usage
+  argv: [df, -h, -x, tmpfs, -x, devtmpfs, -x, squashfs, -x, overlay, -x, efivarfs]
+  # only / and /home: /boot and /boot/efi never matter to a fix and cost prefill
+  keep: 'Mounted on$| /(home)?$'
+  max_lines: 6
+
+- id: home_usage
+  argv: [du, -sh, ~/.cache/thumbnails, ~/.local/share/Trash, ~/.cache, ~/Downloads]
+  max_lines: 6
+
+- id: apt_cache_usage
+  argv: [du, -sh, /var/cache/apt/archives]
+  keep: 'archives$'
+  max_lines: 1
+
+- id: journal_usage
+  argv: [journalctl, --disk-usage]
+  root: true
+  max_lines: 1
+
+# --- network ------------------------------------------------------------
+- id: nm_general
+  argv: [nmcli, -t, -f, 'STATE,CONNECTIVITY,NETWORKING,WIFI-HW,WIFI', general]
+  max_lines: 1
+
+- id: nm_devices
+  argv: [nmcli, -t, -f, 'DEVICE,TYPE,STATE,CONNECTION', device]
+  keep: ':(ethernet|wifi):'
+  max_lines: 6
+
+- id: nm_active
+  argv: [nmcli, -t, -f, 'NAME,DEVICE,TYPE', connection, show, --active]
+  keep: ':(802-3-ethernet|ethernet|802-11-wireless|wifi)$'
+  max_lines: 4
+
+- id: nm_dns
+  argv: [nmcli, -t, -f, 'GENERAL.DEVICE,IP4.DNS', device, show]
+  keep: '^(GENERAL\.DEVICE|IP4\.DNS)'
+  max_lines: 8
+
+- id: nm_service
+  argv: [systemctl, is-active, NetworkManager]
+  max_lines: 1
+
+- id: ip_addr
+  argv: [ip, -br, addr]
+  max_lines: 6
+
+- id: ip_route
+  argv: [ip, route, show, default]
+  max_lines: 3
+
+- id: ping_ip
+  argv: [ping, -c, '2', -W, '2', -q, 1.1.1.1]
+  keep: '(packets transmitted|unreachable|Network is)'
+  timeout: 8
+  max_lines: 2
+
+- id: dns_lookup
+  argv: [getent, hosts, deb.debian.org]
+  timeout: 8
+  max_lines: 2
+  # the address only: the aliases after it differ between Debian and Ubuntu (F-019)
+  fields: 1
+
+- id: resolv_conf
+  argv: [cat, /etc/resolv.conf]
+  keep: '^nameserver'
+  max_lines: 4
+
+# --- updates / apt ------------------------------------------------------
+- id: apt_lock
+  description: Processes holding the dpkg/apt locks (fuser prints to stderr)
+  argv: [fuser, -v, /var/lib/dpkg/lock-frontend, /var/lib/dpkg/lock, /var/lib/apt/lists/lock]
+  root: true
+  max_lines: 6
+
+- id: dpkg_audit
+  argv: [dpkg, --audit]
+  max_lines: 8
+
+- id: apt_check
+  argv: [apt-get, check]
+  root: true
+  keep: '^(E:|W:| |Unmet|The following)'
+  max_lines: 8
+
+- id: apt_update
+  description: Refreshes package lists to surface broken repositories
+  # The one probe that is not read-only: a broken source only shows up when
+  # apt tries to fetch it. Same effect as the desktop's own update check.
+  side_effect: "refreshes apt package lists (network, ~1 min on old PCs)"
+  argv: [apt-get, update, -q]
+  root: true
+  timeout: 120
+  keep: '^(E:|W:|Err)'
+  max_lines: 8
+
+- id: apt_sources
+  argv: [grep, -rHE, '^(deb |URIs:)', /etc/apt/sources.list.d/]
+  max_lines: 10
+
+# --- printing -----------------------------------------------------------
+- id: cups_active
+  argv: [systemctl, is-active, cups]
+  max_lines: 1
+
+- id: lpstat_printers
+  argv: [lpstat, -p, -d]
+  max_lines: 6
+
+- id: lpstat_jobs
+  argv: [lpstat, -o]
+  max_lines: 6
+
+- id: usb_devices
+  argv: [lsusb]
+  keep: '(?i)(print|hewlett|canon|epson|brother|samsung|lexmark|kyocera|xerox)'
+  max_lines: 4
+
+# --- audio (user session) -----------------------------------------------
+- id: audio_server
+  argv: [pactl, info]
+  keep: '^(Server Name|Default Sink)'
+  max_lines: 2
+
+- id: audio_sinks
+  argv: [pactl, list, short, sinks]
+  max_lines: 6
+
+- id: audio_mute
+  argv: [pactl, get-sink-mute, '@DEFAULT_SINK@']
+  max_lines: 1
+
+- id: audio_volume
+  argv: [pactl, get-sink-volume, '@DEFAULT_SINK@']
+  keep: 'Volume'
+  max_lines: 1
+
+- id: audio_services
+  argv: [systemctl, --user, is-active, pipewire, pipewire-pulse, wireplumber]
+  max_lines: 3
+
+# --- apps ---------------------------------------------------------------
+- id: firefox_running
+  # By process name, never -f: with -f the command line of chirone itself
+  # ("chirone apply app.firefox_clear_stale_lock") matched, and the fix
+  # refused to run because "Firefox is open" (F-016).
+  argv: [pgrep, -l, -x, 'firefox|firefox-esr|firefox-bin']
+  max_lines: 3
+
+- id: firefox_locks
+  # Two homes: legacy ~/.mozilla, and the XDG one new profiles get since
+  # Firefox 147 (ESR 153 on Debian 13). `keep` drops find's "No such file"
+  # for whichever of the two does not exist.
+  argv: [find, ~/.mozilla/firefox, ~/.config/mozilla/firefox, -maxdepth, '2', -name, lock]
+  keep: '/lock$'
+  max_lines: 4
+
+# --- actions (everyday requests, not faults) ----------------------------
+- id: apps_installed
+  # desktop id -> name in the user's language, from the .desktop files.
+  # Stable on a given PC: it is the first thing in the step-2 prompt for
+  # `actions`, so llama.cpp's prompt cache makes it free after the first ask.
+  builtin: apps_installed
+  max_lines: 45
+
+- id: apps_running
+  # Programs from apps_installed that are open now. Only a check before and
+  # after app.close: not in any prompt (the model picks from apps_installed).
+  builtin: apps_running
+  max_lines: 45
+
+- id: browser_default
+  argv: [xdg-settings, get, default-web-browser]
+  max_lines: 1

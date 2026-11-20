@@ -1,0 +1,13 @@
+# User service: the model runs only on localhost, inside the person's session.
+# Small context on purpose: chirone prompts stay well under 1k tokens.
+[Unit]
+Description=chirone local model (llama-server)
+
+[Service]
+ExecStart=/usr/local/bin/llama-server -m /opt/chirone/models/chirone.gguf --host 127.0.0.1 --port 8080 --ctx-size 2048 --parallel 1 --threads ${CHIRONE_THREADS} --jinja
+Environment=CHIRONE_THREADS=4
+Nice=10
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

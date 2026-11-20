@@ -1,0 +1,708 @@
+# The closed set of actions the model can choose from.
+# The model only emits {fix_id, params, confidence}. Everything else
+# (commands, checks, the words shown to the person) lives here.
+#
+# Rules enforced by `chirone validate`:
+#  - root playbooks never use "~" and accept only enum/int params or
+#    patterns that cannot start with "-";
+#  - every probe referenced in preconditions/verify exists;
+#  - every "{param}" placeholder is declared.
+#
+# messages.<lang>.plan    shown before asking for confirmation
+# messages.<lang>.success shown when verify passes
+# messages.<lang>.failure shown when verify fails (always ends with a way out)
+
+# === network ===========================================================
+- id: net.enable_networking
+  title: Turn networking back on
+  risk: low
+  root: true
+  steps:
+    - argv: [nmcli, networking, 'on']
+    - wait: 5
+  verify:
+    - {probe: nm_general, match: ':enabled:'}
+  messages:
+    it:
+      plan: "La rete del computer è spenta. Posso riaccenderla?"
+      success: "Fatto, la rete è di nuovo attiva."
+      failure: "Non sono riuscito a riaccendere la rete. Conviene chiedere aiuto."
+    en:
+      plan: "Networking is switched off. Shall I turn it back on?"
+      success: "Done, networking is back on."
+      failure: "I couldn't turn networking back on. Better ask for help."
+
+- id: net.connect_device
+  title: Reconnect a disconnected network device
+  risk: low
+  root: true
+  params:
+    iface: {type: pattern, pattern: '[a-zA-Z0-9][a-zA-Z0-9_.]{0,14}', hint: nm_devices}
+  steps:
+    - argv: [nmcli, device, connect, '{iface}']
+    - wait: 3
+  verify:
+    - {probe: nm_devices, match: '{iface}:[a-z]+:connected'}
+  messages:
+    it:
+      plan: "La connessione {iface} risulta scollegata. Provo a ricollegarla?"
+      success: "Connessione ripristinata."
+      failure: "Non riesco a ricollegarmi. Controlla che il cavo sia inserito o che il modem sia acceso."
+    en:
+      plan: "Connection {iface} is disconnected. Shall I reconnect it?"
+      success: "Connection restored."
+      failure: "I can't reconnect. Check the cable or that the router is on."
+
+- id: net.wifi_radio_on
+  title: Turn the Wi-Fi radio on
+  risk: low
+  root: true
+  steps:
+    - argv: [nmcli, radio, wifi, 'on']
+    - wait: 5
+  verify:
+    - {probe: nm_general, match: ':enabled$'}
+  messages:
+    it:
+      plan: "Il Wi-Fi è disattivato. Lo riattivo?"
+      success: "Wi-Fi riattivato. Tra qualche secondo dovrebbe ricollegarsi da solo."
+      failure: "Il Wi-Fi non si riaccende. Potrebbe esserci un tasto o un interruttore sul portatile."
+    en:
+      plan: "Wi-Fi is turned off. Shall I turn it on?"
+      success: "Wi-Fi is on. It should reconnect in a few seconds."
+      failure: "Wi-Fi won't turn on. There may be a physical switch or key on the laptop."
+
+- id: dns.reset_to_auto
+  title: Drop manual DNS servers and use the router's ones
+  risk: medium
+  root: true
+  params:
+    connection: {type: pattern, pattern: '[A-Za-z0-9][A-Za-z0-9 _.()-]{0,63}', hint: nm_active}
+  steps:
+    - argv: [nmcli, connection, modify, '{connection}', ipv4.ignore-auto-dns, 'no', ipv4.dns, '']
+    - argv: [nmcli, connection, up, '{connection}']
+      timeout: 30
+    - wait: 3
+  # Only when names really do not resolve: an address line means DNS works.
+  # Run 6 chose this on healthy ubuntu24 PCs (2026-11-10, lab notes F-019).
+  preconditions:
+    - {probe: dns_lookup, not_match: '^[0-9A-Fa-f:.]+$'}
+  verify:
+    - {probe: dns_lookup, rc: 0}
+  messages:
+    it:
+      plan: "Il computer usa un indirizzo sbagliato per trovare i siti. Lo rimetto in automatico?"
+      success: "Sistemato, i siti dovrebbero tornare a funzionare."
+      failure: "Non è bastato. Conviene chiedere aiuto."
+      not_needed: "Ho controllato: il computer trova i siti senza problemi, qui non c'è niente da cambiare."
+    en:
+      plan: "The computer uses a wrong address to look up websites. Reset it to automatic?"
+      success: "Fixed, websites should work again."
+      failure: "That wasn't enough. Better ask for help."
+      not_needed: "I checked: the computer finds websites fine, nothing to change here."
+
+- id: svc.restart
+  title: Restart a system service
+  risk: low
+  root: true
+  params:
+    service: {type: enum, values: [NetworkManager, cups], hint: 'nm_service / cups_active'}
+  steps:
+    - argv: [systemctl, restart, '{service}']
+      timeout: 60
+    - wait: 3
+  verify:
+    - {probe: nm_service, match: '^active$', when: {service: NetworkManager}}
+    - {probe: cups_active, match: '^active$', when: {service: cups}}
+  messages:
+    it:
+      plan: "Un servizio del computer ({service}) è fermo. Lo riavvio?"
+      success: "Servizio riavviato."
+      failure: "Il servizio non riparte. Conviene chiedere aiuto."
+    en:
+      plan: "A system service ({service}) is stopped. Shall I restart it?"
+      success: "Service restarted."
+      failure: "The service won't start. Better ask for help."
+
+- id: time.enable_ntp
+  title: Re-enable automatic clock sync
+  risk: low
+  root: true
+  steps:
+    - argv: [timedatectl, set-ntp, 'true']
+    - wait: 10
+  verify:
+    - {probe: time_status, match: '^NTP=yes'}
+  messages:
+    it:
+      plan: "L'orologio del computer è sbagliato, ed è per questo che i siti dicono che la connessione non è sicura. Lo rimetto in automatico?"
+      success: "Orologio sistemato. Se si sbaglia di nuovo dopo ogni accensione, la pila interna del computer potrebbe essere scarica."
+      failure: "Non riesco a sincronizzare l'orologio. Serve una connessione a internet funzionante."
+    en:
+      plan: "The clock is wrong, which is why websites say the connection isn't secure. Set it back to automatic?"
+      success: "Clock fixed. If it goes wrong after every boot, the internal (CMOS) battery may be flat."
+      failure: "I can't sync the clock. It needs a working internet connection."
+
+# === storage ===========================================================
+- id: disk.apt_clean
+  title: Delete downloaded update packages
+  risk: low
+  root: true
+  steps:
+    - argv: [apt-get, clean]
+  verify:
+    - {probe: apt_cache_usage, match: '^[0-9.]+[KM]?\s'}
+  messages:
+    it:
+      plan: "Il disco è pieno di file di aggiornamento già installati. Li cancello? Non perdi niente di tuo."
+      success: "Spazio liberato."
+      failure: "Non sono riuscito a liberare spazio."
+    en:
+      plan: "The disk is full of already-installed update files. Delete them? None of your files are touched."
+      success: "Space freed."
+      failure: "I couldn't free any space."
+
+- id: disk.empty_trash
+  title: Empty the trash
+  risk: medium
+  steps:
+    - argv: [gio, trash, --empty]
+  verify:
+    - {probe: home_usage, not_match: '^[0-9.]+G\s.*Trash$'}
+  messages:
+    it:
+      plan: "Il cestino occupa molto spazio. Lo svuoto? I file nel cestino verranno cancellati per sempre."
+      success: "Cestino svuotato, spazio liberato."
+      failure: "Non sono riuscito a svuotare il cestino."
+    en:
+      plan: "The trash takes a lot of space. Empty it? Files in the trash will be deleted for good."
+      success: "Trash emptied, space freed."
+      failure: "I couldn't empty the trash."
+
+- id: disk.clear_thumbnails
+  title: Delete cached thumbnails
+  risk: low
+  steps:
+    - argv: [rm, -rf, ~/.cache/thumbnails]
+  verify:
+    - {probe: home_usage, not_match: '^[0-9.]+G\s.*thumbnails$'}
+  messages:
+    it:
+      plan: "Le anteprime delle immagini occupano molto spazio. Le cancello? Si ricreano da sole quando servono."
+      success: "Anteprime cancellate, spazio liberato."
+      failure: "Non sono riuscito a cancellare le anteprime."
+    en:
+      plan: "Image thumbnails take a lot of space. Delete them? They are recreated when needed."
+      success: "Thumbnails deleted, space freed."
+      failure: "I couldn't delete the thumbnails."
+
+# === updates ===========================================================
+- id: apt.wait_for_lock
+  title: Wait for another update to finish
+  risk: low
+  confirm: false
+  steps:
+    - wait: 120
+  verify:
+    - {probe: apt_lock, rc: 1}
+  messages:
+    it:
+      plan: "Il computer sta già facendo un aggiornamento per conto suo. Aspetto che finisca, non spegnerlo."
+      success: "L'aggiornamento è finito, ora puoi riprovare."
+      failure: "È ancora occupato. Aspetta qualche minuto e riprova, senza spegnere il computer."
+    en:
+      plan: "The computer is already updating on its own. I'll wait for it to finish, don't switch it off."
+      success: "The update finished, you can try again now."
+      failure: "Still busy. Wait a few minutes and try again, without switching off."
+
+- id: apt.dpkg_configure
+  title: Finish an interrupted installation
+  risk: medium
+  root: true
+  steps:
+    - argv: [dpkg, --configure, -a]
+      env: {DEBIAN_FRONTEND: noninteractive}
+      timeout: 900
+  verify:
+    - {probe: dpkg_audit, rc: 0, not_match: '.'}
+  messages:
+    it:
+      plan: "Un aggiornamento è stato interrotto a metà. Lo completo? Può volerci qualche minuto, non spegnere il computer."
+      success: "Aggiornamento completato."
+      failure: "Non sono riuscito a completarlo. Conviene chiedere aiuto."
+    en:
+      plan: "An update was interrupted halfway. Finish it? It may take a few minutes, don't switch off."
+      success: "Update completed."
+      failure: "I couldn't finish it. Better ask for help."
+
+- id: apt.fix_broken
+  title: Repair missing dependencies
+  risk: medium
+  root: true
+  steps:
+    - argv: [apt-get, -f, install, -y, -q]
+      env: {DEBIAN_FRONTEND: noninteractive}
+      timeout: 900
+  verify:
+    - {probe: apt_check, rc: 0}
+  messages:
+    it:
+      plan: "Un programma installato è rimasto incompleto e blocca gli aggiornamenti. Lo sistemo? Potrei scaricare dei file da internet."
+      success: "Sistemato, gli aggiornamenti funzionano di nuovo."
+      failure: "Non sono riuscito a sistemarlo. Conviene chiedere aiuto."
+    en:
+      plan: "An installed program is incomplete and blocks updates. Repair it? I may download files."
+      success: "Fixed, updates work again."
+      failure: "I couldn't repair it. Better ask for help."
+
+- id: apt.disable_source
+  title: Disable a broken software source
+  risk: medium
+  root: true
+  params:
+    file: {type: pattern, pattern: '[A-Za-z0-9][A-Za-z0-9_.-]{0,80}\.(list|sources)', hint: apt_sources}
+  steps:
+    - argv: [mv, '/etc/apt/sources.list.d/{file}', '/etc/apt/sources.list.d/{file}.disabled']
+  # The file must exist and apt must really be failing: run 6 proposed
+  # disabling Ubuntu's legitimate mozilla.list, under an invented name
+  # (2026-11-10, lab notes F-019). And the failure must be about *that* file:
+  # run 8 picked the good mozilla.list next to the broken source (F-020), so
+  # a host of the file has to appear in an apt error line.
+  preconditions:
+    - {probe: apt_sources, match: '^/etc/apt/sources\.list\.d/{file}:'}
+    - probe: apt_update
+      match: '^(E:|Err)'
+      mentions: {probe: apt_sources, regex: '^/etc/apt/sources\.list\.d/{file}:.*?[a-z+]+://([^/\s\]]+)'}
+  verify:
+    - {probe: apt_update, not_match: '^(E:|Err)'}
+  messages:
+    it:
+      plan: "Una fonte di aggiornamenti ({file}) non funziona più e blocca gli altri aggiornamenti. La disattivo? Si può riattivare in seguito."
+      success: "Fonte disattivata, gli aggiornamenti funzionano di nuovo."
+      failure: "Ci sono ancora errori negli aggiornamenti. Conviene chiedere aiuto."
+      not_needed: "Ho controllato: le fonti degli aggiornamenti funzionano, non c'è niente da disattivare."
+    en:
+      plan: "A software source ({file}) is broken and blocks updates. Disable it? It can be re-enabled later."
+      success: "Source disabled, updates work again."
+      failure: "Updates still fail. Better ask for help."
+      not_needed: "I checked: the update sources work, nothing to disable."
+
+# === printing ==========================================================
+- id: print.enable_printer
+  title: Resume a paused printer
+  risk: low
+  root: true
+  params:
+    printer: {type: pattern, pattern: '[A-Za-z0-9][A-Za-z0-9_.-]{0,63}', hint: lpstat_printers}
+  steps:
+    - argv: [cupsenable, '{printer}']
+    - argv: [cupsaccept, '{printer}']
+  verify:
+    - {probe: lpstat_printers, not_match: '{printer} disabled'}
+  messages:
+    it:
+      plan: "La stampante {printer} è in pausa. La riattivo?"
+      success: "Stampante riattivata, puoi riprovare a stampare."
+      failure: "La stampante resta in pausa. Controlla che sia accesa e collegata."
+    en:
+      plan: "Printer {printer} is paused. Resume it?"
+      success: "Printer resumed, try printing again."
+      failure: "The printer stays paused. Check it's on and connected."
+
+- id: print.clear_queue
+  title: Cancel stuck print jobs
+  risk: medium
+  root: true
+  params:
+    printer: {type: pattern, pattern: '[A-Za-z0-9][A-Za-z0-9_.-]{0,63}', hint: lpstat_jobs}
+  steps:
+    - argv: [cancel, -a, '{printer}']
+  verify:
+    - {probe: lpstat_jobs, not_match: '^{printer}-'}
+  messages:
+    it:
+      plan: "Ci sono stampe bloccate in coda su {printer}. Le cancello? Poi dovrai rimandare quella che ti serve."
+      success: "Coda svuotata. Controlla che la stampante sia accesa e collegata, poi riprova."
+      failure: "Non sono riuscito a svuotare la coda."
+    en:
+      plan: "There are stuck print jobs on {printer}. Cancel them? You'll need to resend the one you need."
+      success: "Queue cleared. Check the printer is on and connected, then try again."
+      failure: "I couldn't clear the queue."
+
+# === audio (user session) ==============================================
+- id: audio.unmute
+  title: Unmute the speakers
+  risk: low
+  confirm: false
+  steps:
+    - argv: [pactl, set-sink-mute, '@DEFAULT_SINK@', '0']
+  verify:
+    - {probe: audio_mute, match: 'Mute: no'}
+  messages:
+    it:
+      plan: "L'audio era disattivato, lo riattivo."
+      success: "Audio riattivato."
+      failure: "Non riesco a riattivare l'audio."
+    en:
+      plan: "Sound was muted, unmuting it."
+      success: "Sound is back on."
+      failure: "I can't unmute the sound."
+
+- id: audio.set_volume
+  title: Set the volume
+  risk: low
+  confirm: false
+  params:
+    percent: {type: int, min: 10, max: 100, default: 60}
+  steps:
+    - argv: [pactl, set-sink-volume, '@DEFAULT_SINK@', '{percent}%']
+  verify:
+    - {probe: audio_volume, not_match: ' 0%'}
+  messages:
+    it:
+      plan: "Metto il volume al {percent}%."
+      success: "Volume sistemato."
+      failure: "Non riesco a cambiare il volume."
+    en:
+      plan: "Setting the volume to {percent}%."
+      success: "Volume fixed."
+      failure: "I can't change the volume."
+
+- id: audio.set_default_sink
+  title: Send sound to the right output
+  risk: low
+  params:
+    sink: {type: pattern, pattern: '[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}', hint: audio_sinks}
+  steps:
+    - argv: [pactl, set-default-sink, '{sink}']
+  # Run 9 on a PC whose only sink was PipeWire's auto_null (no card seen) chose
+  # it, already the default: a fix that changes nothing. The sink must exist and
+  # not be the default already.
+  preconditions:
+    - {probe: audio_sinks, match: '^\d+\s+{sink}\s'}
+    - {probe: audio_server, not_match: '^Default Sink: {sink}$'}
+  verify:
+    - {probe: audio_server, match: 'Default Sink: {sink}'}
+  messages:
+    it:
+      plan: "Il suono esce dall'uscita sbagliata. Lo sposto sulle casse?"
+      success: "Fatto, il suono ora esce dalle casse."
+      failure: "Non riesco a cambiare l'uscita audio."
+      not_needed: "Ho controllato: il suono va già all'unica uscita che il computer vede, non c'è un'altra uscita a cui mandarlo."
+    en:
+      plan: "Sound goes to the wrong output. Move it to the speakers?"
+      success: "Done, sound now goes to the speakers."
+      failure: "I can't change the audio output."
+      not_needed: "I checked: sound already goes to the only output the computer sees, there is no other output to send it to."
+
+- id: audio.restart_stack
+  title: Restart the sound system
+  risk: low
+  steps:
+    - argv: [systemctl, --user, restart, pipewire.socket, pipewire-pulse.socket]
+    - argv: [systemctl, --user, restart, pipewire, pipewire-pulse, wireplumber]
+    - wait: 3
+  preconditions:
+    - {probe: audio_services, not_match: 'unknown'}
+  verify:
+    - {probe: audio_server, match: 'PipeWire'}
+  messages:
+    it:
+      plan: "Il sistema audio si è bloccato. Lo riavvio? I programmi che stanno suonando potrebbero fermarsi."
+      success: "Audio ripartito."
+      failure: "L'audio non riparte. Prova a riavviare il computer."
+    en:
+      plan: "The sound system is stuck. Restart it? Programs playing sound may stop."
+      success: "Sound is back."
+      failure: "Sound won't restart. Try rebooting the computer."
+
+# === apps ==============================================================
+- id: app.firefox_clear_stale_lock
+  title: Remove a stale Firefox profile lock
+  risk: low
+  params:
+    profile: {type: pattern, pattern: '[A-Za-z0-9][A-Za-z0-9._-]{0,63}', hint: firefox_locks}
+  preconditions:
+    - {probe: firefox_running, rc: 1}
+  steps:
+    - argv: [rm, -f, '~/.mozilla/firefox/{profile}/lock', '~/.mozilla/firefox/{profile}/.parentlock',
+             '~/.config/mozilla/firefox/{profile}/lock', '~/.config/mozilla/firefox/{profile}/.parentlock']
+  verify:
+    - {probe: firefox_locks, not_match: '/{profile}/lock$'}
+  messages:
+    it:
+      plan: "Firefox crede di essere già aperto e per questo non parte. Sistemo? Non perdi segnalibri né password."
+      success: "Fatto, ora Firefox dovrebbe aprirsi."
+      failure: "Firefox è ancora bloccato. Prova a riavviare il computer."
+    en:
+      plan: "Firefox thinks it's already running, so it won't start. Fix it? Bookmarks and passwords are kept."
+      success: "Done, Firefox should open now."
+      failure: "Firefox is still stuck. Try rebooting the computer."
+
+- id: proc.terminate_user_process
+  title: Close a program that is hogging the computer
+  risk: medium
+  params:
+    pid: {type: int, min: 2, max: 4194304, hint: top_procs}
+  preconditions:
+    - probe: proc_comm
+      not_match: '^(systemd|Xorg|Xwayland|dbus-daemon|pipewire.*|wireplumber|xfce4-.*|xfwm4|cinnamon.*|lightdm.*|python3|llama-server|sshd|login|bash|sh)$'
+  steps:
+    - argv: [kill, -TERM, '{pid}']
+    - wait: 5
+  verify:
+    - {probe: proc_alive, rc: 1}
+  messages:
+    it:
+      plan: "Un programma (processo {pid}) sta usando tutto il computer. Lo chiudo? Se c'era qualcosa di non salvato in quel programma, andrà perso."
+      success: "Programma chiuso, il computer dovrebbe tornare veloce."
+      failure: "Il programma non si chiude. Prova a riavviare il computer."
+    en:
+      plan: "A program (process {pid}) is hogging the computer. Close it? Unsaved work in it will be lost."
+      success: "Program closed, the computer should be fast again."
+      failure: "The program won't close. Try rebooting."
+
+# === global (allowed in every category) ================================
+- id: escalate.human
+  title: Hand over to a person
+  risk: low
+  confirm: false
+  handover: true
+  params:
+    reason: {type: enum, values: [disk_failure_suspected, hardware_suspected, needs_password, unknown_issue, out_of_scope]}
+  messages:
+    it:
+      plan: "Questo problema è meglio farlo vedere a una persona di fiducia."
+      success: "Ho salvato un riepilogo da fargli leggere: {summary_path}"
+      failure: "Non sono riuscito a salvare il riepilogo sul computer. Fai vedere questo a chi ti aiuta (anche con una foto):"
+    en:
+      plan: "This one is best looked at by someone you trust."
+      success: "I saved a summary for them to read: {summary_path}"
+      failure: "I couldn't save the summary on this computer. Show this to whoever helps you (a photo is fine):"
+
+- id: info.what_i_can_do
+  title: Not a PC problem chirone can act on (greeting, question about chirone, impossible request)
+  risk: low
+  confirm: false
+  messages:
+    it:
+      plan: "Sono chirone e ti aiuto con il computer: internet, audio, stampante, spazio sul disco, aggiornamenti, programmi che non si aprono. Posso anche aprirti un programma o un sito, cercare qualcosa su internet o ricordarti una cosa tra qualche minuto. Scrivimi cosa non va o cosa ti serve."
+      success: ""
+      failure: ""
+    en:
+      plan: "I'm chirone and I help with this computer: internet, sound, printer, disk space, updates, programs that won't open. I can also open a program or a website, search the web or remind you of something in a few minutes. Tell me what's wrong or what you need."
+      success: ""
+      failure: ""
+
+- id: noop.no_issue_found
+  title: Nothing is broken
+  risk: low
+  confirm: false
+  messages:
+    it:
+      plan: "Ho controllato e non vedo guasti. Se vuoi, descrivimi il problema in un altro modo."
+      success: ""
+      failure: ""
+    en:
+      plan: "I checked and I don't see anything broken. Feel free to describe it differently."
+      success: ""
+      failure: ""
+
+# --- actions: everyday requests -------------------------------------------
+# Not repairs: the person asks the computer to do something. Same rules as
+# every playbook (closed list, validated params, no shell, user level), but no
+# confirmation: opening a program or a search is harmless and undoable, and
+# asking "are you sure?" for it would make the assistant tiring to use.
+
+- id: app.open
+  title: Open an installed program
+  risk: low
+  confirm: false
+  params:
+    # a desktop id from apps_installed; no slash, so never a path
+    app: {type: pattern, pattern: '[A-Za-z0-9][A-Za-z0-9._-]{0,99}', hint: apps_installed}
+  preconditions:
+    - {probe: apps_installed, match: '^{app}: '}
+  steps:
+    - {argv: [gtk-launch, '{app}'], detach: true, timeout: 8}
+  messages:
+    it:
+      plan: "Apro il programma."
+      success: "Fatto, si sta aprendo. Sui computer più vecchi può metterci qualche secondo."
+      failure: "Non sono riuscito ad aprirlo."
+    en:
+      plan: "Opening the program."
+      success: "Done, it's opening. On older computers it can take a few seconds."
+      failure: "I couldn't open it."
+
+- id: app.close
+  title: Close an open program, the way its own close button does
+  risk: medium
+  params:
+    # a desktop id from apps_installed, like app.open; that it is open now
+    # is checked here, not decided by the model
+    app: {type: pattern, pattern: '[A-Za-z0-9][A-Za-z0-9._-]{0,99}', hint: apps_installed}
+  preconditions:
+    - {probe: apps_running, match: '^{app}: '}
+  steps:
+    # SIGTERM, not SIGKILL: a program with unsaved work can still ask. Never
+    # the terminal chirone itself runs in (builtins._ancestors).
+    - {argv: [chirone, close-app, '{app}'], timeout: 20}
+  verify:
+    - {probe: apps_running, not_match: '^{app}: '}
+  messages:
+    it:
+      plan: "Chiudo il programma. Se c'è qualcosa di non salvato, il programma potrebbe chiederti se salvarlo. Procedo?"
+      success: "Fatto, l'ho chiuso."
+      failure: "Non sono riuscito a chiuderlo: forse non è aperto, oppure sta aspettando una tua risposta (per esempio se salvare)."
+    en:
+      plan: "Closing the program. If there is unsaved work, it may ask you whether to save it. Go ahead?"
+      success: "Done, it's closed."
+      failure: "I couldn't close it: maybe it isn't open, or it is waiting for your answer (for example whether to save)."
+
+- id: system.restart
+  title: Restart the computer when the person asks
+  risk: medium
+  # From the person's own session (logind lets the active local user reboot):
+  # no root helper. Nothing to verify afterwards: the computer is restarting.
+  steps:
+    - {argv: [systemctl, reboot], timeout: 20}
+  messages:
+    it:
+      plan: "Riavvio il computer. Prima salva quello che stai facendo: i programmi aperti verranno chiusi. Procedo?"
+      success: "Il computer si sta riavviando. Ci vorrà qualche minuto."
+      failure: "Non sono riuscito a riavviare il computer. Puoi farlo dal menu, alla voce Esci o Spegni."
+    en:
+      plan: "Restarting the computer. Save what you are doing first: open programs will be closed. Go ahead?"
+      success: "The computer is restarting. It will take a few minutes."
+      failure: "I couldn't restart the computer. You can do it from the menu, under Log Out or Shut Down."
+
+- id: web.search
+  title: Search the web in the browser
+  risk: low
+  confirm: false
+  params:
+    # what the person wants to look up, copied from their words; plain text
+    # (no quotes, backslashes or control characters, never an option)
+    query: {type: pattern, pattern: '[^"\\\x00-\x1f -][^"\\\x00-\x1f]{0,119}'}
+    # Firefox's --search uses the search engine the person chose, not one we
+    # pick for them. Debian ships it as firefox-esr.
+    browser: {type: enum, values: [firefox, firefox-esr], hint: browser_default}
+  steps:
+    - {argv: ['{browser}', --search, '{query}'], detach: true, timeout: 8}
+  messages:
+    it:
+      plan: "Cerco «{query}» su internet."
+      success: "Ecco, ho aperto la ricerca nel browser."
+      failure: "Non sono riuscito ad aprire il browser."
+    en:
+      plan: "Searching the web for “{query}”."
+      success: "Here you go, the search is open in the browser."
+      failure: "I couldn't open the browser."
+
+- id: web.open_site
+  title: Open a well-known website from a vetted list
+  risk: low
+  confirm: false
+  params:
+    # The model picks a name; the URL is ours. Never a URL the person dictates
+    # or reads in an email: that is how phishing works. Country-specific
+    # entries (pilot: Italy) live here and are reviewed like code.
+    site:
+      type: enum
+      values: [email_gmail, email_outlook, email_libero, whatsapp, news_ansa, news_rai, news_bbc,
+               tv_raiplay, youtube, inps, health_record, tax_agency, weather, wikipedia]
+      map:
+        email_gmail: https://mail.google.com
+        email_outlook: https://outlook.live.com/mail/
+        email_libero: https://mail.libero.it
+        whatsapp: https://web.whatsapp.com
+        news_ansa: https://www.ansa.it
+        news_rai: https://www.rainews.it
+        news_bbc: https://www.bbc.com/news
+        tv_raiplay: https://www.raiplay.it
+        youtube: https://www.youtube.com
+        inps: https://www.inps.it
+        health_record: https://www.fascicolosanitario.gov.it
+        tax_agency: https://www.agenziaentrate.gov.it
+        weather: https://www.meteoam.it
+        wikipedia: https://www.wikipedia.org
+    browser: {type: enum, values: [firefox, firefox-esr], hint: browser_default}
+  steps:
+    - {argv: ['{browser}', --new-tab, '{site}'], detach: true, timeout: 8}
+  messages:
+    it:
+      plan: "Apro il sito."
+      success: "Ecco, l'ho aperto nel browser. Se chiede la password, quella la sai solo tu: io non la vedo."
+      failure: "Non sono riuscito ad aprire il browser."
+    en:
+      plan: "Opening the website."
+      success: "Here it is, open in the browser. If it asks for a password, only you know it: I can't see it."
+      failure: "I couldn't open the browser."
+
+- id: files.open_folder
+  title: Open one of the person's folders
+  risk: low
+  confirm: false
+  params:
+    # resolved on the PC with xdg-user-dir: "Immagini" on an Italian desktop
+    folder:
+      type: enum
+      values: [photos, documents, downloads, music, videos, desktop]
+      map: {photos: 'xdg:PICTURES', documents: 'xdg:DOCUMENTS', downloads: 'xdg:DOWNLOAD',
+            music: 'xdg:MUSIC', videos: 'xdg:VIDEOS', desktop: 'xdg:DESKTOP'}
+  steps:
+    - {argv: [xdg-open, '{folder}'], detach: true, timeout: 8}
+  messages:
+    it:
+      plan: "Apro la cartella."
+      success: "Ecco la cartella."
+      failure: "Non trovo quella cartella su questo computer."
+    en:
+      plan: "Opening the folder."
+      success: "Here is the folder."
+      failure: "I can't find that folder on this computer."
+
+- id: audio.volume_up
+  title: Turn the volume up a bit
+  risk: low
+  confirm: false
+  steps:
+    - argv: [pactl, set-sink-mute, '@DEFAULT_SINK@', '0']
+    - argv: [pactl, set-sink-volume, '@DEFAULT_SINK@', '+15%']
+  messages:
+    it: {plan: "Alzo il volume.", success: "Fatto.", failure: "Non riesco a cambiare il volume."}
+    en: {plan: "Turning the volume up.", success: "Done.", failure: "I can't change the volume."}
+
+- id: audio.volume_down
+  title: Turn the volume down a bit
+  risk: low
+  confirm: false
+  steps:
+    - argv: [pactl, set-sink-volume, '@DEFAULT_SINK@', '-15%']
+  messages:
+    it: {plan: "Abbasso il volume.", success: "Fatto.", failure: "Non riesco a cambiare il volume."}
+    en: {plan: "Turning the volume down.", success: "Done.", failure: "I can't change the volume."}
+
+- id: reminder.set
+  title: Pop up a reminder after some minutes
+  risk: low
+  confirm: false
+  params:
+    minutes: {type: int, min: 1, max: 1440}
+    # the person's words, shown back to them; plain text like a search
+    text: {type: pattern, pattern: '[^"\\\x00-\x1f -][^"\\\x00-\x1f]{0,79}'}
+  steps:
+    # A transient user timer: survives closing chirone, not a reboot (said so
+    # in the message). notify-send shows it through the desktop's notifications.
+    - argv: [systemd-run, --user, --collect, '--on-active={minutes}m', --timer-property=AccuracySec=5s,
+             notify-send, --urgency=critical, --app-name=chirone, Chirone, '{text}']
+  messages:
+    it:
+      plan: "Ti ricorderò «{text}» tra {minutes} minuti."
+      success: "D'accordo. Se spegni il computer prima, il promemoria si perde."
+      failure: "Non sono riuscito a impostare il promemoria."
+    en:
+      plan: "I'll remind you “{text}” in {minutes} minutes."
+      success: "All right. If you switch the computer off before then, the reminder is lost."
+      failure: "I couldn't set the reminder."

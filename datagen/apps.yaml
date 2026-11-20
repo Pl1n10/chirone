@@ -1,0 +1,45 @@
+# Programs a person asks to open, as concepts. `ids`: desktop ids that
+# implement the concept on Debian-family desktops (Xfce, Cinnamon, MATE, GNOME),
+# in order of preference. The label of a request is the first id installed in
+# that PC's apps_installed snapshot; a request whose concept is not installed
+# there is skipped for that PC.
+calculator:
+  it: "la calcolatrice"
+  en: "the calculator"
+  ids: [galculator, org.gnome.Calculator, mate-calc, org.kde.kcalc]
+letter:
+  it: "un programma per scrivere una lettera o un documento (tipo Word)"
+  en: "a program to write a letter or a document (like Word)"
+  ids: [libreoffice-writer]
+spreadsheet:
+  it: "il foglio di calcolo per i conti di casa (tipo Excel)"
+  en: "a spreadsheet for the household accounts (like Excel)"
+  ids: [libreoffice-calc]
+notes:
+  it: "un blocco note per scrivere due appunti veloci"
+  en: "a notepad to jot down a quick note"
+  ids: [org.xfce.mousepad, mousepad, org.gnome.TextEditor, xed, pluma, org.gnome.gedit, gedit]
+files:
+  it: "le cartelle con i file e i documenti salvati"
+  en: "the folders with saved files and documents"
+  ids: [thunar, org.xfce.thunar, nemo, org.gnome.Nautilus, caja]
+photos:
+  it: "le foto (il programma per guardare le immagini)"
+  en: "the photos (the program to look at pictures)"
+  ids: [org.xfce.ristretto, ristretto, xviewer, org.gnome.eog, eom]
+browser:
+  it: "internet (il browser)"
+  en: "the internet (the web browser)"
+  ids: [firefox-esr, firefox]
+video:
+  it: "il programma per vedere un video o sentire la musica"
+  en: "the program to watch a video or listen to music"
+  ids: [org.xfce.Parole, parole, vlc, io.github.celluloid_player.Celluloid, org.gnome.Totem]
+task_manager:
+  it: "il programma che mostra cosa sta rallentando il computer"
+  en: "the program that shows what is slowing the computer down"
+  ids: [org.xfce.taskmanager, xfce4-taskmanager, org.gnome.SystemMonitor, gnome-system-monitor, mate-system-monitor]
+settings:
+  it: "le impostazioni del computer"
+  en: "the computer's settings"
+  ids: [xfce-settings-manager, org.xfce.settings.manager, org.gnome.Settings, gnome-control-center, cinnamon-settings]
